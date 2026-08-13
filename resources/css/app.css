@@ -1,0 +1,363 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/* Dark mode is driven by a class on <html> so the header toggle can switch it.
+   The layout sets that class from localStorage, falling back to the OS setting,
+   before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Brand scale — the indigo the app already used, named so it can be
+       re-pointed in one place. */
+    --color-brand-50: #eef2ff;
+    --color-brand-100: #e0e7ff;
+    --color-brand-200: #c7d2fe;
+    --color-brand-300: #a5b4fc;
+    --color-brand-400: #818cf8;
+    --color-brand-500: #6366f1;
+    --color-brand-600: #4f46e5;
+    --color-brand-700: #4338ca;
+    --color-brand-800: #3730a3;
+    --color-brand-900: #312e81;
+    --color-brand-950: #1e1b4b;
+
+    --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06);
+    --shadow-raised: 0 10px 30px -12px rgb(15 23 42 / 0.25);
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Belt-and-braces against page-level horizontal scroll: any one element
+       that miscalculates its width (a long unbroken string, a table that
+       slipped past its overflow-x-auto wrapper) should clip rather than widen
+       the document. Scoped, intentionally-scrolling regions like the board's
+       kanban lanes set their own overflow-x-auto and are unaffected. */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    img, svg, video, canvas {
+        max-width: 100%;
+        height: auto;
+    }
+
+    ::selection {
+        background-color: var(--color-brand-600);
+        color: #fff;
+    }
+
+    /* One consistent focus ring instead of the browser default. */
+    :where(a, button, input, select, textarea, summary):focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
+    }
+
+    /* Slim scrollbars — the sidebar and long tables get a lot of them. */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-slate-300) transparent;
+    }
+
+    .dark * {
+        scrollbar-color: var(--color-slate-700) transparent;
+    }
+}
+
+@layer components {
+    /* Page background: a flat slate with a very soft brand wash at the top,
+       so screens do not read as a blank sheet. */
+    .app-surface {
+        background-color: var(--color-slate-50);
+        background-image:
+            radial-gradient(60rem 32rem at 12% -12%, rgb(99 102 241 / 0.10), transparent 60%),
+            radial-gradient(50rem 28rem at 88% -18%, rgb(14 165 233 / 0.08), transparent 60%);
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+
+    .dark .app-surface {
+        background-color: var(--color-slate-950);
+        background-image:
+            radial-gradient(60rem 32rem at 12% -12%, rgb(99 102 241 / 0.18), transparent 60%),
+            radial-gradient(50rem 28rem at 88% -18%, rgb(56 189 248 / 0.10), transparent 60%);
+    }
+
+    /* Faint grid used behind the login brand panel. */
+    .grid-overlay {
+        background-image:
+            linear-gradient(to right, rgb(255 255 255 / 0.07) 1px, transparent 1px),
+            linear-gradient(to bottom, rgb(255 255 255 / 0.07) 1px, transparent 1px);
+        background-size: 3rem 3rem;
+    }
+
+    .brand-mark {
+        background-image: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-700));
+        box-shadow: 0 6px 16px -6px rgb(79 70 229 / 0.7);
+    }
+
+    .field-input {
+        width: 100%;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-slate-300);
+        background-color: #fff;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.875rem;
+        color: var(--color-slate-900);
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .field-input::placeholder {
+        color: var(--color-slate-400);
+    }
+
+    .field-input:focus {
+        border-color: var(--color-brand-500);
+        box-shadow: 0 0 0 3px rgb(99 102 241 / 0.18);
+        outline: none;
+    }
+
+    .dark .field-input {
+        border-color: var(--color-slate-700);
+        background-color: var(--color-slate-800);
+        color: var(--color-slate-100);
+    }
+
+    /* Searchable selects — the native <select> stays in the DOM (transparent,
+       behind the trigger) so validation and form posts keep working, and this
+       button + panel is what the user actually sees. */
+    .ss {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        text-align: left;
+    }
+
+    .ss-native {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        appearance: none;
+    }
+
+    .ss-button {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        text-align: left;
+        cursor: pointer;
+        background-color: #fff;
+    }
+
+    .dark .ss-button {
+        background-color: var(--color-slate-800);
+    }
+
+    .ss-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .ss-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ss-placeholder {
+        color: var(--color-slate-400);
+    }
+
+    .ss-chevron {
+        width: 1rem;
+        height: 1rem;
+        flex: none;
+        color: var(--color-slate-400);
+    }
+
+    .ss-panel {
+        position: absolute;
+        z-index: 50;
+        top: calc(100% + 0.25rem);
+        left: 0;
+        min-width: 100%;
+        max-width: min(22rem, 90vw);
+        width: max-content;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-slate-200);
+        background-color: #fff;
+        box-shadow: var(--shadow-raised);
+        overflow: hidden;
+    }
+
+    .ss-panel-up {
+        top: auto;
+        bottom: calc(100% + 0.25rem);
+    }
+
+    .dark .ss-panel {
+        border-color: var(--color-slate-700);
+        background-color: var(--color-slate-900);
+    }
+
+    .ss-search {
+        padding: 0.5rem;
+        border-bottom: 1px solid var(--color-slate-200);
+    }
+
+    .dark .ss-search {
+        border-color: var(--color-slate-800);
+    }
+
+    .ss-search-input {
+        width: 100%;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-slate-300);
+        background-color: #fff;
+        padding: 0.35rem 0.55rem;
+        font-size: 0.8125rem;
+        color: var(--color-slate-900);
+    }
+
+    .ss-search-input:focus {
+        border-color: var(--color-brand-500);
+        box-shadow: 0 0 0 3px rgb(99 102 241 / 0.18);
+        outline: none;
+    }
+
+    .dark .ss-search-input {
+        border-color: var(--color-slate-700);
+        background-color: var(--color-slate-800);
+        color: var(--color-slate-100);
+    }
+
+    .ss-list {
+        max-height: 15rem;
+        overflow-y: auto;
+        padding: 0.25rem;
+        margin: 0;
+        list-style: none;
+    }
+
+    .ss-group {
+        padding: 0.4rem 0.55rem 0.2rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-slate-400);
+    }
+
+    .ss-option {
+        border-radius: var(--radius-md);
+        padding: 0.4rem 0.55rem;
+        font-size: 0.8125rem;
+        color: var(--color-slate-700);
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dark .ss-option {
+        color: var(--color-slate-300);
+    }
+
+    .ss-option-active {
+        background-color: var(--color-slate-100);
+        color: var(--color-slate-900);
+    }
+
+    .dark .ss-option-active {
+        background-color: var(--color-slate-800);
+        color: #fff;
+    }
+
+    .ss-option-selected {
+        color: var(--color-brand-700);
+        font-weight: 600;
+    }
+
+    .dark .ss-option-selected {
+        color: var(--color-brand-300);
+    }
+
+    .ss-option-disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .ss-empty {
+        padding: 0.75rem 0.75rem 0.9rem;
+        font-size: 0.8125rem;
+        color: var(--color-slate-400);
+    }
+
+    .nav-link {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        border-radius: var(--radius-lg);
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--color-slate-600);
+        transition: background-color 120ms ease, color 120ms ease;
+    }
+
+    .nav-link:hover {
+        background-color: var(--color-slate-100);
+        color: var(--color-slate-900);
+    }
+
+    .dark .nav-link {
+        color: var(--color-slate-400);
+    }
+
+    .dark .nav-link:hover {
+        background-color: var(--color-slate-800);
+        color: #fff;
+    }
+
+    .nav-link-active {
+        background-color: var(--color-brand-50);
+        color: var(--color-brand-700);
+    }
+
+    .nav-link-active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.45rem;
+        bottom: 0.45rem;
+        width: 3px;
+        border-radius: 9999px;
+        background-color: var(--color-brand-600);
+    }
+
+    .dark .nav-link-active {
+        background-color: rgb(99 102 241 / 0.14);
+        color: var(--color-brand-200);
+    }
+
+    .dark .nav-link-active::before {
+        background-color: var(--color-brand-400);
+    }
+}

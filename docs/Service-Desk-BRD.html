@@ -1,0 +1,1314 @@
+<title>Service Desk — Business Requirements Document</title>
+
+<style>
+  /* ---------------------------------------------------------------- tokens */
+  :root {
+    --paper:   #F4F6F8;
+    --surface: #FFFFFF;
+    --sunken:  #EAEEF2;
+    --ink:     #131C24;
+    --muted:   #5A6875;
+    --faint:   #8695A2;
+    --rule:    #D5DCE3;
+    --rule-strong: #B7C2CC;
+    --accent:  #14556B;
+    --accent-soft: #E2EDF1;
+    --ok:      #1D6F4B;
+    --warn:    #8A5D0A;
+    --crit:    #A02A20;
+
+    --sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: "Cascadia Mono", "SF Mono", ui-monospace, Consolas, "Roboto Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:   #10151A;
+      --surface: #161D24;
+      --sunken:  #1C242C;
+      --ink:     #E6EBF0;
+      --muted:   #98A6B3;
+      --faint:   #74838F;
+      --rule:    #26303A;
+      --rule-strong: #38454F;
+      --accent:  #6FB4C8;
+      --accent-soft: #14262E;
+      --ok:      #5CBF8C;
+      --warn:    #D6A548;
+      --crit:    #E08076;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:   #10151A;
+    --surface: #161D24;
+    --sunken:  #1C242C;
+    --ink:     #E6EBF0;
+    --muted:   #98A6B3;
+    --faint:   #74838F;
+    --rule:    #26303A;
+    --rule-strong: #38454F;
+    --accent:  #6FB4C8;
+    --accent-soft: #14262E;
+    --ok:      #5CBF8C;
+    --warn:    #D6A548;
+    --crit:    #E08076;
+  }
+
+  /* ----------------------------------------------------------------- base */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 0 20px 96px;
+  }
+
+  @media (min-width: 1080px) {
+    .shell {
+      grid-template-columns: 232px minmax(0, 1fr);
+      gap: 56px;
+      padding: 0 32px 120px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ toc */
+  .toc {
+    padding: 28px 0 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+
+  @media (min-width: 1080px) {
+    .toc {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding: 44px 0 44px;
+    }
+  }
+
+  .toc-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 12px;
+  }
+
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+
+  .toc a {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 6px;
+    padding: 4px 6px 4px 0;
+    color: var(--muted);
+    text-decoration: none;
+    border-radius: 2px;
+  }
+
+  .toc a:hover { color: var(--accent); }
+  .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .toc a span:first-child { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+
+  /* -------------------------------------------------------------- masthead */
+  .masthead { padding: 44px 0 0; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    font-family: var(--sans);
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 650;
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+    text-wrap: balance;
+    margin: 0 0 14px;
+  }
+
+  .standfirst {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 62ch;
+    margin: 0 0 32px;
+  }
+
+  /* -------------------------------------------------- document control block */
+  .doc-control {
+    border: 1px solid var(--rule-strong);
+    background: var(--rule);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    font-family: var(--sans);
+  }
+
+  @media (min-width: 720px) {
+    .doc-control { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+
+  .doc-control div {
+    padding: 12px 14px;
+    background: var(--surface);
+  }
+
+  .doc-control dt {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 4px;
+  }
+
+  .doc-control dd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 550;
+    color: var(--ink);
+  }
+
+  /* -------------------------------------------------------------- sections */
+  section { padding-top: 52px; scroll-margin-top: 24px; }
+
+  h2 {
+    font-family: var(--sans);
+    font-size: 25px;
+    font-weight: 640;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0 0 6px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--ink);
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    align-items: baseline;
+  }
+
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0;
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 16.5px;
+    font-weight: 640;
+    letter-spacing: -0.005em;
+    margin: 34px 0 10px;
+    color: var(--ink);
+  }
+
+  h4 {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 26px 0 8px;
+  }
+
+  p { margin: 0 0 14px; max-width: 72ch; }
+
+  ul, ol.body-list { margin: 0 0 16px; padding-left: 20px; max-width: 72ch; }
+  li { margin-bottom: 5px; }
+
+  a { color: var(--accent); }
+
+  strong { font-weight: 650; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.855em;
+    background: var(--sunken);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  /* ---------------------------------------------------------------- tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    margin: 0 0 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  thead th {
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--sunken);
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+
+  td.id, th.id { font-family: var(--mono); font-size: 12px; white-space: nowrap; color: var(--accent); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.mono { font-family: var(--mono); font-size: 12px; }
+  td.nowrap { white-space: nowrap; }
+
+  /* ----------------------------------------------------------------- chips */
+  .chip {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .chip.live   { color: var(--ok); }
+  .chip.part   { color: var(--warn); }
+  .chip.gap    { color: var(--crit); }
+  .chip.plan   { color: var(--faint); }
+
+  /* ----------------------------------------------------------------- notes */
+  .note {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 14px 18px;
+    margin: 0 0 20px;
+    max-width: 72ch;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  .note-label {
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  /* ----------------------------------------------------------------- stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    border: 1px solid var(--rule);
+    margin: 0 0 22px;
+    background: var(--rule);
+  }
+
+  @media (min-width: 640px)  { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 900px)  { .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+  .stats div {
+    padding: 14px;
+    background: var(--surface);
+  }
+
+  .stats dt {
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 5px;
+  }
+
+  .stats dd {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 25px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* ---------------------------------------------------------------- footer */
+  footer {
+    margin-top: 68px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    color: var(--faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="shell">
+
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-label">Contents</div>
+    <ol>
+      <li><a href="#s1"><span>1</span><span>Executive summary</span></a></li>
+      <li><a href="#s2"><span>2</span><span>Business context</span></a></li>
+      <li><a href="#s3"><span>3</span><span>Objectives</span></a></li>
+      <li><a href="#s4"><span>4</span><span>Scope</span></a></li>
+      <li><a href="#s5"><span>5</span><span>Stakeholders &amp; roles</span></a></li>
+      <li><a href="#s6"><span>6</span><span>Organisational model</span></a></li>
+      <li><a href="#s7"><span>7</span><span>Access &amp; identity</span></a></li>
+      <li><a href="#s8"><span>8</span><span>Tickets</span></a></li>
+      <li><a href="#s9"><span>9</span><span>Service levels</span></a></li>
+      <li><a href="#s10"><span>10</span><span>Development requests</span></a></li>
+      <li><a href="#s11"><span>11</span><span>Compliance register</span></a></li>
+      <li><a href="#s12"><span>12</span><span>Tasks</span></a></li>
+      <li><a href="#s13"><span>13</span><span>Dashboards</span></a></li>
+      <li><a href="#s14"><span>14</span><span>Reports</span></a></li>
+      <li><a href="#s15"><span>15</span><span>Notifications</span></a></li>
+      <li><a href="#s16"><span>16</span><span>Administration</span></a></li>
+      <li><a href="#s17"><span>17</span><span>Audit trail</span></a></li>
+      <li><a href="#s18"><span>18</span><span>Business rules</span></a></li>
+      <li><a href="#s19"><span>19</span><span>Non-functional</span></a></li>
+      <li><a href="#s20"><span>20</span><span>Data model</span></a></li>
+      <li><a href="#s21"><span>21</span><span>Constraints</span></a></li>
+      <li><a href="#s22"><span>22</span><span>Gaps &amp; decisions</span></a></li>
+      <li><a href="#s23"><span>23</span><span>Acceptance criteria</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <header class="masthead">
+      <p class="eyebrow">Business Requirements Document</p>
+      <h1>Service Desk</h1>
+      <p class="standfirst">
+        A single system of record for IT support, development requests, compliance obligations
+        and management tasks across the Yousuf Dewan group of companies — with service levels,
+        role-based access and a complete audit trail.
+      </p>
+
+      <dl class="doc-control">
+        <div><dt>Document</dt><dd>BRD — Service Desk</dd></div>
+        <div><dt>Version</dt><dd>1.0</dd></div>
+        <div><dt>Date</dt><dd>12 August 2026</dd></div>
+        <div><dt>Status</dt><dd>Live — pilot in progress</dd></div>
+        <div><dt>Platform</dt><dd>Laravel 12 · Oracle 19c</dd></div>
+        <div><dt>Schema</dt><dd>SDESK @ ORCLPDB</dd></div>
+        <div><dt>Deployment</dt><dd>sdesk.d-tech.com.pk</dd></div>
+        <div><dt>Audience</dt><dd>Management, IT, Compliance</dd></div>
+      </dl>
+    </header>
+
+    <!-- ============================================================== 1 -->
+    <section id="s1">
+      <h2><span class="num">1</span><span>Executive summary</span></h2>
+
+      <p>
+        The Service Desk replaces informal, unrecorded handling of internal requests with one
+        auditable workflow shared by every company in the group. Four operational registers —
+        <strong>tickets</strong>, <strong>development requests</strong>, <strong>compliance
+        obligations</strong> and <strong>management tasks</strong> — sit on a common foundation of
+        organisational scope, role-based permissions, document numbering and audit logging.
+      </p>
+
+      <p>
+        Every record is tagged to a company and a location. A user only ever sees the companies and
+        locations they have been granted, and within that, only what their role permits. Service
+        levels are derived automatically from ticket priority and refreshed on a schedule, so breach
+        reporting does not depend on anyone remembering to update a status.
+      </p>
+
+      <p>
+        The system is deployed and carrying live traffic. The organisational structure, user base
+        and master data are fully loaded; transactional volume is still at pilot scale while the
+        rollout proceeds company by company.
+      </p>
+
+      <h4>Position at time of writing</h4>
+      <dl class="stats">
+        <div><dt>Companies</dt><dd>20</dd></div>
+        <div><dt>Locations</dt><dd>14</dd></div>
+        <div><dt>Departments</dt><dd>19</dd></div>
+        <div><dt>Users</dt><dd>354</dd></div>
+        <div><dt>Roles</dt><dd>9</dd></div>
+        <div><dt>Permissions</dt><dd>43</dd></div>
+      </dl>
+
+      <div class="note">
+        <span class="note-label">Rollout status</span>
+        <p>
+          Structure and identity data are complete across all 20 companies. Operational data is
+          concentrated in Dewan Motors (DML), which is running the pilot: the first tickets and the
+          first compliance obligation have been raised there. Locations and departments are so far
+          defined for DML only — the remaining companies need their own before they can transact.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================== 2 -->
+    <section id="s2">
+      <h2><span class="num">2</span><span>Business context</span></h2>
+
+      <p>
+        Yousuf Dewan Companies operates twenty legal entities spanning cement, motors, textiles,
+        sugar, spinning and trading, sharing a central IT function and common corporate services.
+        Before this system, requests for IT support, software change and compliance follow-up moved
+        by phone, email and walk-up. That created four recurring problems:
+      </p>
+
+      <ul>
+        <li><strong>No record.</strong> Requests could not be counted, aged or attributed, so IT workload was invisible to management.</li>
+        <li><strong>No accountability.</strong> Nothing recorded who owned a request or when it was due, and nothing escalated when it slipped.</li>
+        <li><strong>No separation between entities.</strong> Group-wide staff worked across companies with no consistent rule for who could see which company's records.</li>
+        <li><strong>No audit trail.</strong> Changes to requests, approvals and master data left no evidence, which internal audit and compliance both require.</li>
+      </ul>
+
+      <p>
+        The Service Desk addresses all four with a single application: recorded intake, assigned
+        ownership with time-bound service levels, company and location scoping enforced at the query
+        layer, and an immutable audit log of every create, update, approval and sign-in.
+      </p>
+    </section>
+
+    <!-- ============================================================== 3 -->
+    <section id="s3">
+      <h2><span class="num">3</span><span>Objectives and success measures</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Objective</th><th>How success is measured</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">OBJ-01</td><td>Capture every internal IT request in one register</td><td>Share of IT work arriving as a ticket rather than by phone or email; zero untracked requests reported by department heads</td></tr>
+            <tr><td class="id">OBJ-02</td><td>Make IT workload and responsiveness visible to management</td><td>DGM and management dashboards in weekly use; ticket volume, ageing and per-agent throughput available without manual collation</td></tr>
+            <tr><td class="id">OBJ-03</td><td>Hold agreed response and resolution times</td><td>SLA breach rate trending down; breaches visible on the dashboard within 15 minutes of occurring</td></tr>
+            <tr><td class="id">OBJ-04</td><td>Route business software change through a controlled approval path</td><td>Every development request carries a recorded approval or rejection with a named approver</td></tr>
+            <tr><td class="id">OBJ-05</td><td>Track compliance obligations to a due date and a verified close</td><td>Register maintained with owner, risk level and due date; overdue items surfaced to management</td></tr>
+            <tr><td class="id">OBJ-06</td><td>Enforce entity separation without duplicating the system</td><td>One deployment serving 20 companies; no cross-company data visible outside granted scope</td></tr>
+            <tr><td class="id">OBJ-07</td><td>Provide an audit-ready change history</td><td>Every business record change carries actor, timestamp, IP and before/after values</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 4 -->
+    <section id="s4">
+      <h2><span class="num">4</span><span>Scope</span></h2>
+
+      <h3>In scope</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Capability</th><th>Covers</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Tickets</td><td>Raise, assign, comment (public and internal), attach files, resolve, close, reopen, rate</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Service levels</td><td>Response and resolution targets by priority, scheduled breach detection</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Development requests</td><td>Business intake, approval decision, developer assignment, progress and effort tracking</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Compliance register</td><td>Risk-rated obligations, due dates, findings, remediation, verification, recurrence</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Tasks</td><td>Management task assignment with progress, subtasks and comments</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Dashboards</td><td>DGM/IT, management, compliance, development and personal views</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Reports</td><td>Ticket summary, SLA breaches, compliance, development, CSV export</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Notifications</td><td>In-app bell with live polling, plus browser push per device</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Administration</td><td>Organisations, companies, locations, departments, users, roles and permissions</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td>Audit trail</td><td>Immutable log of creates, updates, approvals, sign-in and sign-out</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Out of scope for this release</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Item</th><th>Position</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Asset register</td><td>Database table, model and <code>assets.view</code> / <code>assets.manage</code> permissions exist, but no screens are built. Deferred to a later phase.</td></tr>
+            <tr><td>Generic approvals</td><td>An <code>APPROVALS</code> table exists but is unused; approvals today are handled inside the development request workflow only.</td></tr>
+            <tr><td>Email notification</td><td>Delivery is in-app and browser push only. No SMTP delivery of ticket events.</td></tr>
+            <tr><td>Native mobile app</td><td>The interface is responsive and installs as a web app; no native build.</td></tr>
+            <tr><td>HR system integration</td><td>Employee records are loaded by seeder from the HR roster; there is no live sync.</td></tr>
+            <tr><td>Knowledge base</td><td>A static user guide exists; no searchable article repository or self-service deflection.</td></tr>
+            <tr><td>Customer/external portal</td><td>The system serves internal staff only. No external or vendor access.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 5 -->
+    <section id="s5">
+      <h2><span class="num">5</span><span>Stakeholders and roles</span></h2>
+
+      <p>
+        Nine roles are defined, ordered by a hierarchy level where a lower number carries more
+        authority. A user holds exactly one role; that role determines every permission they have.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Level</th><th>Role</th><th>Responsibility</th><th class="num">Users</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">1</td><td><strong>System Administrator</strong></td><td>Full access to every module and all configuration; holds the wildcard grant</td><td class="num">1</td></tr>
+            <tr><td class="id">5</td><td><strong>DGM</strong></td><td>Oversees the service desk across companies and locations; approves development requests</td><td class="num">15</td></tr>
+            <tr><td class="id">10</td><td><strong>Management</strong></td><td>Executive visibility across all four registers, with task assignment and approval rights</td><td class="num">11</td></tr>
+            <tr><td class="id">15</td><td><strong>IT Manager</strong></td><td>Runs the IT queue and team — assigns, resolves, closes and deletes tickets; manages master data</td><td class="num">6</td></tr>
+            <tr><td class="id">20</td><td><strong>Compliance Officer</strong></td><td>Owns the compliance register end to end, including assignment and verification</td><td class="num">3</td></tr>
+            <tr><td class="id">25</td><td><strong>Department Head</strong></td><td>Sees and assigns their department's requests and tasks</td><td class="num">2</td></tr>
+            <tr><td class="id">30</td><td><strong>Developer</strong></td><td>Delivers approved development requests and posts progress</td><td class="num">1</td></tr>
+            <tr><td class="id">30</td><td><strong>IT Support Staff</strong></td><td>Works assigned tickets, adds internal notes, resolves</td><td class="num">12</td></tr>
+            <tr><td class="id">50</td><td><strong>Employee</strong></td><td>Raises tickets and development requests; reports progress on tasks handed to them</td><td class="num">303</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Requirement</span>
+        <p>
+          <strong>FR-ROL-01</strong> — Roles are data, not code. An administrator can create a new
+          role, set its hierarchy level, and grant or revoke any individual permission from a
+          checklist grouped by module. Every user holding that role picks up the change immediately.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================== 6 -->
+    <section id="s6">
+      <h2><span class="num">6</span><span>Organisational model</span></h2>
+
+      <p>
+        The group structure is a four-level hierarchy. Every operational record carries a company and
+        a location, which is what makes one deployment safe for twenty entities.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Level</th><th>Meaning</th><th>Example</th><th class="num">Count</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Organisation</strong></td><td>The group holding entity</td><td>Yousuf Dewan Companies</td><td class="num">1</td></tr>
+            <tr><td><strong>Company</strong></td><td>A legal entity with its own document numbering</td><td>Dewan Motors (DML), Dewan Cement (DCL)</td><td class="num">20</td></tr>
+            <tr><td><strong>Location</strong></td><td>A physical site belonging to a company</td><td>Dewan Centre H.O, PSC Lahore, Body Shop Karachi</td><td class="num">14</td></tr>
+            <tr><td><strong>Department</strong></td><td>A functional unit within a company; one is flagged as the IT team</td><td>Information Technology, Finance, Compliance</td><td class="num">19</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Access grants and the working scope</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-SCP-01</td><td>A user may be granted any number of organisations, companies and locations, or the blanket flags "all organisations", "all companies", "all locations"</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SCP-02</td><td>On sign-in the system establishes a working company and location from the user's defaults before the first page renders</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SCP-03</td><td>The working company and location can be switched from the page header at any time; the selection persists in the session</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SCP-04</td><td>A switch is rejected if the user has not been granted the target company or location</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SCP-05</td><td>Every list query filters to the granted companies and locations; every detail view re-checks access, so a record cannot be reached by guessing its identifier</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SCP-06</td><td>Document numbering restarts per company, per document type, per year, and uniqueness is scoped to the company</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 7 -->
+    <section id="s7">
+      <h2><span class="num">7</span><span>Access and identity</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-ACC-01</td><td>Staff sign in with either their registered email address or their mobile number; the number is accepted in any common format (<code>0301-829 8234</code>, <code>+92 301 8298234</code>, <code>3018298234</code>)</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-02</td><td>Sign-in attempts are rate limited to ten per minute per client</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-03</td><td>A deactivated account is refused sign-in with a message directing the user to their administrator</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-04</td><td>Accounts created or password-reset by an administrator are flagged to force a password change before any other screen can be reached</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-05</td><td>Passwords require a minimum of eight characters including letters and numbers</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-06</td><td>The session identifier is regenerated on successful sign-in, and invalidated with a fresh token on sign-out</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-07</td><td>Last sign-in time and IP address are recorded on the user record</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-08</td><td>Sign-in and sign-out are written to the audit trail</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-09</td><td>The sign-in page is never served from cache, so the form always carries a valid request token</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-10</td><td>If a session expires before a form is submitted, the user is returned to that form with their input preserved and an explanation, rather than an error page</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ACC-11</td><td>Sessions expire after 120 minutes of inactivity</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 8 -->
+    <section id="s8">
+      <h2><span class="num">8</span><span>Tickets</span></h2>
+
+      <p>
+        The ticket is the primary record of the service desk: any request for IT support, access,
+        equipment or a fix. Tickets are numbered per company and per year — <code>IT-2026-000001</code>
+        — and carry a full history from intake to closure.
+      </p>
+
+      <h3>Classification</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dimension</th><th>Values</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Type</strong></td><td>Incident · Service Request · Change · Problem · Access</td></tr>
+            <tr><td><strong>Category</strong></td><td>Hardware · Software · Network · Printer · Email · ERP · Account · Permission · New Equipment · Software Installation · Data Request · System Change · Other</td></tr>
+            <tr><td><strong>Priority</strong></td><td>Low · Medium · High · Critical</td></tr>
+            <tr><td><strong>Status</strong></td><td>Open · In Progress · Pending · Resolved · Closed · Cancelled</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Types, categories, priorities and statuses are configurable lookup data, not fixed values, so
+        the classification scheme can change without a code release.
+      </p>
+
+      <h3>Lifecycle requirements</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-TKT-01</td><td>Any signed-in user may raise a ticket for their company, choosing type, category and priority, with a description and file attachments</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-02</td><td>On creation the system allocates a company-scoped ticket number, sets status to Open, derives the response and resolution deadlines, writes a history entry and an audit entry — all in one transaction</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-03</td><td>An unassigned new ticket notifies the IT Managers and IT Staff of that company; a pre-assigned ticket notifies the assignee instead</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-04</td><td>Users with assignment rights can assign or reassign a ticket to any agent, with an optional note; the assignee is notified and the change is recorded in history</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-05</td><td>Status changes are recorded with the previous and new value, the actor and an optional note</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-06</td><td>Comments may be public (visible to the requester) or internal (restricted to staff holding the internal-notes permission)</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-07</td><td>The first staff response is timestamped for response-time measurement</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-08</td><td>Resolving a ticket requires a written resolution; the resolver and resolution time are recorded and the SLA outcome is finalised</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-09</td><td>A resolved ticket can be reopened; each reopen increments a counter held on the ticket</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-10</td><td>The requester may rate a resolved or closed ticket and leave a note</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-11</td><td>Attachments are stored on the file system with only metadata and path held in the database; download re-checks access</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-12</td><td>Deletion is restricted to holders of the delete permission and is written to the audit trail</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-13</td><td>Users without the "view all tickets" permission see only tickets they raised or are assigned to — in both the list and the detail view</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TKT-14</td><td>The list supports search on number and subject, plus filters for status, priority, type, category, department, assignee and SLA state</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 9 -->
+    <section id="s9">
+      <h2><span class="num">9</span><span>Service levels</span></h2>
+
+      <p>
+        Service level targets are held as policy data rather than hard-coded. A policy may be defined
+        for the whole group or for a single company, and may be qualified by priority and ticket
+        type. Where no policy matches, the hours configured on the priority itself apply.
+      </p>
+
+      <h3>Group default targets</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Priority</th><th class="num">First response</th><th class="num">Resolution</th><th>Policy code</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Critical</strong></td><td class="num">1 hour</td><td class="num">8 hours</td><td class="mono">DEFAULT_CRITICAL</td></tr>
+            <tr><td><strong>High</strong></td><td class="num">4 hours</td><td class="num">24 hours</td><td class="mono">DEFAULT_HIGH</td></tr>
+            <tr><td><strong>Medium</strong></td><td class="num">8 hours</td><td class="num">48 hours</td><td class="mono">DEFAULT_MEDIUM</td></tr>
+            <tr><td><strong>Low</strong></td><td class="num">24 hours</td><td class="num">120 hours</td><td class="mono">DEFAULT_LOW</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>SLA states</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>State</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>On track</strong></td><td>More than 20% of the resolution window remains</td></tr>
+            <tr><td><strong>At risk</strong></td><td>20% or less of the window remains and the ticket is still open</td></tr>
+            <tr><td><strong>Breached</strong></td><td>The resolution deadline has passed with the ticket unresolved</td></tr>
+            <tr><td><strong>Met</strong></td><td>Resolved on or before the deadline — a final state, never recalculated</td></tr>
+            <tr><td><strong>Paused</strong></td><td>The ticket is in a Pending status, waiting on the requester or a third party</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-SLA-01</td><td>Response and resolution deadlines are set automatically at ticket creation from the matching policy, or from the priority where none matches</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SLA-02</td><td>SLA state is recalculated on a schedule every fifteen minutes rather than on each page request</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SLA-03</td><td>Once a ticket is resolved its SLA outcome is final and is never recalculated</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SLA-04</td><td>Moving a ticket to a Pending status pauses the clock; returning it to an active status resumes it</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SLA-05</td><td>Breached tickets are listed on the DGM dashboard and in the SLA report, ordered by how far past due they are</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-SLA-06</td><td>Targets are measured in elapsed clock hours; working calendars and public holidays are not modelled</td><td><span class="chip part">Noted</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 10 -->
+    <section id="s10">
+      <h2><span class="num">10</span><span>Development requests</span></h2>
+
+      <p>
+        Requests for new software, reports or changes to existing systems follow an approval path
+        before any development effort is committed. Numbering is company-prefixed —
+        <code>DML-DEV-2026-000001</code>.
+      </p>
+
+      <h3>Pipeline</h3>
+      <p>
+        Requested → Analysis → Approved → Developing → Testing → UAT → Deployed, with
+        <strong>On hold</strong> and <strong>Rejected</strong> as off-ramps. Deployed and Rejected are
+        both terminal.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-DEV-01</td><td>Any user with the create permission may raise a request with a title, business justification, priority and target date</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DEV-02</td><td>A request must be approved, rejected or put on hold by a holder of the approval permission — DGM or Management — before development starts</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DEV-03</td><td>The decision records the approver and the timestamp; a rejection requires and stores a reason</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DEV-04</td><td>The decision moves the pipeline status automatically and notifies the requester</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DEV-05</td><td>An approved request is assigned to a developer, who posts dated progress updates with a percentage and hours spent</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DEV-06</td><td>Estimated and actual effort are held on the request for variance reporting</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DEV-07</td><td>Requesters see their own requests; the pipeline view is restricted to holders of update, approve or assign rights</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DEV-08</td><td>All state changes are written to the audit trail with an <code>APPROVAL</code> action for decisions</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 11 -->
+    <section id="s11">
+      <h2><span class="num">11</span><span>Compliance register</span></h2>
+
+      <p>
+        The compliance register tracks regulatory and internal obligations to a named owner, a due
+        date and a verified close. Numbering is company-prefixed — <code>DML-CMP-2026-000001</code>.
+      </p>
+
+      <h3>Classification</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dimension</th><th>Values</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Category</strong></td><td>IT Security · Data Privacy · Financial · Regulatory · Internal Audit · Health &amp; Safety · Licensing · Business Continuity</td></tr>
+            <tr><td><strong>Risk level</strong></td><td>Low · Medium · High · Critical</td></tr>
+            <tr><td><strong>Status</strong></td><td>Pending · In Progress · Under Review · Completed · Non-compliant · Not Applicable</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-CMP-01</td><td>A Compliance Officer creates an obligation with category, risk level, regulation reference, owner, reviewer, department and due date</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-CMP-02</td><td>The owner posts progress updates carrying a percentage, findings and remediation notes, with evidence attached</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-CMP-03</td><td>A completed obligation is verified by a holder of the verify permission; the verifier and timestamp are recorded</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-CMP-04</td><td>Recurring obligations carry a recurrence pattern and a next due date</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-CMP-05</td><td>Holders of the "view all compliance" permission — Administrator, DGM, Management, IT Manager — see the whole register for their granted companies</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-CMP-06</td><td>Everyone else sees only the obligations they own, raised, review or created — enforced identically in the list and the detail view</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-CMP-07</td><td>The register is filterable by status, risk level, category and overdue state</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-CMP-08</td><td>Open obligations, overdue counts and high-risk items appear on the compliance, management and DGM dashboards</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Open item</span>
+        <p>
+          IT Support Staff can be named as the owner of an obligation but do not currently hold the
+          compliance view permission, so they cannot open what is assigned to them. This is a role
+          configuration decision — see <a href="#s22">§22</a>.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================== 12 -->
+    <section id="s12">
+      <h2><span class="num">12</span><span>Tasks</span></h2>
+
+      <p>
+        The task register covers management work handed to a named person that is not an IT ticket:
+        follow-ups, deliverables and internal actions. Numbering is company-prefixed —
+        <code>DML-TSK-2026-000001</code>. Statuses are Pending, In Progress, On Hold, Completed and
+        Cancelled.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-TSK-01</td><td>A user with create rights assigns a task with a title, description, priority, department, owner and due date</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TSK-02</td><td>Tasks may be nested — a task can carry subtasks that roll up under a parent</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TSK-03</td><td>The owner reports progress as a percentage and adds comments; estimated and actual hours are tracked</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TSK-04</td><td>A task past its due date and not in a completed status is flagged overdue</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TSK-05</td><td>Users without assignment rights see only tasks assigned to them or raised by them</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-TSK-06</td><td>Employees without assignment rights may update only status and progress, not scope or ownership</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 13 -->
+    <section id="s13">
+      <h2><span class="num">13</span><span>Dashboards</span></h2>
+
+      <p>
+        Each role lands on the dashboard that matches their job. Every figure is a live database
+        aggregate scoped to the user's working company and location — nothing is cached or
+        hard-coded.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dashboard</th><th>Audience</th><th>Content</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Service Desk Overview</strong></td>
+              <td>DGM · Administrator · IT Manager</td>
+              <td>SLA health, closure rate and average resolution time; ten ticket KPIs; 14-day volume trend; status and priority mix; recent tickets; SLA breaches; per-agent performance; ticket load by department; cross-company comparison. Plus task and compliance totals with recent items from both registers.</td>
+            </tr>
+            <tr>
+              <td><strong>Management</strong></td>
+              <td>Management</td>
+              <td>Summary across all four registers, recent tasks, overdue tasks, cross-company breakdown</td>
+            </tr>
+            <tr>
+              <td><strong>Compliance</strong></td>
+              <td>Compliance Officer</td>
+              <td>Seven register KPIs, obligations due next by deadline, open high and critical risk items</td>
+            </tr>
+            <tr>
+              <td><strong>Development</strong></td>
+              <td>Developer</td>
+              <td>Pipeline summary and the fifteen most recent requests with status and owner</td>
+            </tr>
+            <tr>
+              <td><strong>Personal</strong></td>
+              <td>Employee · Department Head · IT Staff</td>
+              <td>My open requests, tickets assigned to me, my open tasks, and four personal counters including overdue work</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-DSH-01</td><td>Users are routed to the dashboard matching their role on sign-in</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DSH-02</td><td>Every figure respects the user's company and location grants and the active working scope</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DSH-03</td><td>KPI tiles link through to the matching filtered list, so a number can always be opened as its underlying records</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DSH-04</td><td>Users with access to more than one company see a cross-company comparison table</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-DSH-05</td><td>Management and IT leadership see the task and compliance registers on their own dashboard, not only the ticket queue</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 14 -->
+    <section id="s14">
+      <h2><span class="num">14</span><span>Reports</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Report</th><th>Content</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Ticket summary</strong></td><td>Volume, status and priority distribution, resolution times over a selected date range</td></tr>
+            <tr><td><strong>SLA</strong></td><td>Breach listing and compliance percentage by priority and by agent</td></tr>
+            <tr><td><strong>Compliance</strong></td><td>Register position by category, risk level and status, with overdue analysis</td></tr>
+            <tr><td><strong>Development</strong></td><td>Pipeline position, approval outcomes and effort variance</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-RPT-01</td><td>Every report takes a date range and respects the user's company and location scope</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-RPT-02</td><td>Ticket data can be exported to CSV by holders of the export permission</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-RPT-03</td><td>Exports are streamed rather than assembled in memory, so large ranges do not exhaust the server</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-RPT-04</td><td>Report access requires the view permission; export requires a separate export permission</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-RPT-05</td><td>Scheduled or emailed report delivery</td><td><span class="chip plan">Not built</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 15 -->
+    <section id="s15">
+      <h2><span class="num">15</span><span>Notifications</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-NTF-01</td><td>A notification is raised on ticket creation, assignment, status change, resolution and comment; on development approval decisions; and on compliance assignment</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-NTF-02</td><td>Notifications can be addressed to an individual, a list of people, or every holder of a role within a company</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-NTF-03</td><td>The header bell shows an unread count and refreshes automatically — every 30 seconds while the tab is in front, every 120 seconds in the background</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-NTF-04</td><td>Opening a notification marks it read and navigates to the record it refers to</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-NTF-05</td><td>All notifications can be marked read in one action</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-NTF-06</td><td>A user may enable browser push per device, so notifications arrive with the tab closed; push is queued and delivered outside the request cycle</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-NTF-07</td><td>Push requires HTTPS and the user's explicit consent in the browser; a test notification is available to confirm setup</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-NTF-08</td><td>Email delivery of notifications</td><td><span class="chip plan">Not built</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 16 -->
+    <section id="s16">
+      <h2><span class="num">16</span><span>Administration</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-ADM-01</td><td>Organisations, companies, locations and departments are maintained through the interface; each is scoped by the level above it</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-02</td><td>A company carries its own ticket number prefix, so numbering reads correctly per entity</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-03</td><td>One department per company is flagged as the IT team, which is where unassigned tickets are routed</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-04</td><td>Users are created and edited with a role, department, designation, contact details and per-company/location grants</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-05</td><td>An administrator can reset a user's password and deactivate or reactivate an account</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-06</td><td>Roles are created and edited through the interface, with permissions granted from a checklist grouped by module</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-07</td><td>Built-in roles keep their internal code, which the application matches on; their name, level, description and permissions remain editable</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-08</td><td>The System Administrator role permanently holds every permission and cannot be downgraded through the form</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-09</td><td>An administrator cannot remove role-management rights from their own role, which would leave the system unadministrable</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-10</td><td>Built-in roles cannot be deactivated</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-ADM-11</td><td>Lookup data — statuses, priorities, types, categories — is maintained as data, editable without a release</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 17 -->
+    <section id="s17">
+      <h2><span class="num">17</span><span>Audit trail</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Requirement</th><th class="nowrap">State</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">FR-AUD-01</td><td>Every create, update, delete, approval, sign-in and sign-out is logged with the actor, entity type, entity identifier, timestamp, IP address and user agent</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-AUD-02</td><td>Updates store the before and after values of the changed fields only, so the entry states exactly what moved</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-AUD-03</td><td>Passwords and tokens are stripped from audit snapshots before they are written</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-AUD-04</td><td>Each entry carries the company and location scope active at the time of the action</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-AUD-05</td><td>The trail is readable only by holders of the audit permission — Administrator, DGM, IT Manager, Compliance Officer</td><td><span class="chip live">Live</span></td></tr>
+            <tr><td class="id">FR-AUD-06</td><td>The trail is append-only; there is no edit or delete path through the application</td><td><span class="chip live">Live</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 18 -->
+    <section id="s18">
+      <h2><span class="num">18</span><span>Business rules</span></h2>
+
+      <h3>18.1 Document numbering</h3>
+      <p>
+        Numbers are human-readable and separate from the internal database key. Allocation runs inside
+        a database package using an autonomous transaction, so concurrent requests serialise on the
+        counter and the lock releases immediately without waiting for the surrounding business
+        transaction. Counters restart per company, per document type, per year.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Register</th><th>Format</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Tickets</td><td class="mono">{company ticket prefix}-{year}-{000000}</td><td class="mono">IT-2026-000001</td></tr>
+            <tr><td>Development</td><td class="mono">{company}-DEV-{year}-{000000}</td><td class="mono">DML-DEV-2026-000001</td></tr>
+            <tr><td>Compliance</td><td class="mono">{company}-CMP-{year}-{000000}</td><td class="mono">DML-CMP-2026-000001</td></tr>
+            <tr><td>Tasks</td><td class="mono">{company}-TSK-{year}-{000000}</td><td class="mono">DML-TSK-2026-000001</td></tr>
+            <tr><td>Assets</td><td class="mono">{company}-AST-{year}-{000000}</td><td class="mono">DML-AST-2026-000001</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>18.2 Record visibility</h3>
+      <p>
+        Two independent layers decide what a user can reach. Both are enforced on lists <em>and</em>
+        on detail views, so a record cannot be opened by guessing its identifier.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Register</th><th>Sees everything in scope when they hold</th><th>Otherwise limited to records where they are</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Tickets</strong></td><td class="mono">tickets.view_all</td><td>Requester or assignee</td></tr>
+            <tr><td><strong>Tasks</strong></td><td class="mono">tasks.assign</td><td>Owner or assigner</td></tr>
+            <tr><td><strong>Compliance</strong></td><td class="mono">compliance.view_all, .update, .assign or .verify</td><td>Owner, assigner, reviewer or creator</td></tr>
+            <tr><td><strong>Development</strong></td><td class="mono">development.update, .approve or .assign</td><td>Requester or assignee</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>18.3 Permission catalogue</h3>
+      <p>Forty-three permissions across eight modules, plus a wildcard reserved for the administrator role.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Module</th><th>Permissions</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Dashboard</strong></td><td class="mono">view · dgm · management · compliance · development</td></tr>
+            <tr><td><strong>Tickets</strong></td><td class="mono">view · view_all · create · update · assign · resolve · close · delete · comment_internal</td></tr>
+            <tr><td><strong>Development</strong></td><td class="mono">view · create · update · assign · approve</td></tr>
+            <tr><td><strong>Compliance</strong></td><td class="mono">view · view_all · create · update · assign · verify</td></tr>
+            <tr><td><strong>Tasks</strong></td><td class="mono">view · create · update · assign</td></tr>
+            <tr><td><strong>Assets</strong></td><td class="mono">view · manage</td></tr>
+            <tr><td><strong>Reports</strong></td><td class="mono">view · export</td></tr>
+            <tr><td><strong>Administration</strong></td><td class="mono">users.view · users.manage · roles.manage · organizations.manage · companies.manage · locations.manage · departments.manage · lookups.manage · audit.view</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>18.4 Transactional integrity</h3>
+      <p>
+        Every multi-table operation runs inside a single database transaction. Creating a ticket
+        writes the ticket, its history row, the audit entry and the notifications together, or none of
+        them. The same rule applies to assignment, status change, resolution, approval decisions and
+        compliance updates.
+      </p>
+    </section>
+
+    <!-- ============================================================== 19 -->
+    <section id="s19">
+      <h2><span class="num">19</span><span>Non-functional requirements</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Area</th><th>Requirement</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">NFR-01</td><td>Security</td><td>All access is authenticated. Authorisation is checked at the route, the query and the individual record. Passwords are stored hashed and never appear in logs or audit snapshots.</td></tr>
+            <tr><td class="id">NFR-02</td><td>Security</td><td>Every state-changing request carries a verified request token. Expiry degrades gracefully rather than discarding the user's input.</td></tr>
+            <tr><td class="id">NFR-03</td><td>Security</td><td>Transport is HTTPS; session cookies are marked secure and same-site.</td></tr>
+            <tr><td class="id">NFR-04</td><td>Data integrity</td><td>Primary keys come from database sequences with insert triggers. Status values live in lookup tables; genuinely fixed values (SLA state, risk level) are enforced by check constraints.</td></tr>
+            <tr><td class="id">NFR-05</td><td>Data integrity</td><td>Document numbers are unique per company and allocated without gaps under concurrency.</td></tr>
+            <tr><td class="id">NFR-06</td><td>Performance</td><td>Indexes cover every dashboard and report filter — status, priority, requester, assignee, department, company, location, created and due dates, SLA state — plus a composite index on the most common slice.</td></tr>
+            <tr><td class="id">NFR-07</td><td>Performance</td><td>Dashboards aggregate at the database rather than in application code. Long lists are paginated at 20–25 rows. Exports stream.</td></tr>
+            <tr><td class="id">NFR-08</td><td>Availability</td><td>SLA recalculation runs on a schedule with overlap protection, so a slow run cannot stack up.</td></tr>
+            <tr><td class="id">NFR-09</td><td>Usability</td><td>The interface is responsive from mobile to desktop, supports light and dark themes, and installs as a web app.</td></tr>
+            <tr><td class="id">NFR-10</td><td>Usability</td><td>A built-in user guide filters itself to the reader's role, so each user sees only the steps they can perform.</td></tr>
+            <tr><td class="id">NFR-11</td><td>Maintainability</td><td>Classification schemes, service level policies, roles and permissions are all configurable data. Changing them does not require a code release.</td></tr>
+            <tr><td class="id">NFR-12</td><td>Auditability</td><td>The audit trail is append-only and retained indefinitely; there is no application path to alter or remove an entry.</td></tr>
+            <tr><td class="id">NFR-13</td><td>Localisation</td><td>The interface is English. Timestamps are stored and displayed in Pakistan Standard Time (UTC+05:00) with the character set set to full Unicode.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 20 -->
+    <section id="s20">
+      <h2><span class="num">20</span><span>Data model</span></h2>
+
+      <p>Forty tables in the <code>SDESK</code> schema, grouped by purpose.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Group</th><th>Tables</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Structure</strong></td><td class="mono">ORGANIZATIONS · COMPANIES · LOCATIONS · DEPARTMENTS · DESIGNATIONS</td></tr>
+            <tr><td><strong>Identity &amp; access</strong></td><td class="mono">USERS · ROLES · PERMISSIONS · ROLE_PERMISSIONS · USER_ORGANIZATIONS · USER_COMPANIES · USER_LOCATIONS · PASSWORD_RESET_TOKENS</td></tr>
+            <tr><td><strong>Tickets</strong></td><td class="mono">TICKETS · TICKET_COMMENTS · TICKET_HISTORY · TICKET_ATTACHMENTS · TICKET_STATUSES · TICKET_PRIORITIES · TICKET_TYPES · TICKET_CATEGORIES · SLA_POLICIES</td></tr>
+            <tr><td><strong>Development</strong></td><td class="mono">DEVELOPMENT_REQUESTS · DEVELOPMENT_UPDATES · DEVELOPMENT_STATUSES</td></tr>
+            <tr><td><strong>Compliance</strong></td><td class="mono">COMPLIANCE_TASKS · COMPLIANCE_UPDATES · COMPLIANCE_STATUSES · COMPLIANCE_CATEGORIES</td></tr>
+            <tr><td><strong>Tasks</strong></td><td class="mono">TASKS · TASK_COMMENTS · TASK_STATUSES</td></tr>
+            <tr><td><strong>Supporting</strong></td><td class="mono">AUDIT_LOGS · NOTIFICATIONS · PUSH_SUBSCRIPTIONS · DOC_SEQUENCES · ASSETS · APPROVALS · MIGRATIONS</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Storage conventions</h4>
+      <ul>
+        <li>Long text — descriptions, resolutions, comments, findings, audit snapshots — is stored as character large objects.</li>
+        <li>Uploaded files are written to application storage; only the metadata and path are held in the database.</li>
+        <li>Audit change columns hold JSON validated by a database constraint.</li>
+        <li>Reporting views exist only where the logic is genuinely reusable; simple listings are built by query.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================== 21 -->
+    <section id="s21">
+      <h2><span class="num">21</span><span>Assumptions, dependencies and constraints</span></h2>
+
+      <h4>Assumptions</h4>
+      <ul>
+        <li>Every user has a unique email address or mobile number recorded in the HR roster.</li>
+        <li>One role per user is sufficient; a person needing two capability sets receives a role that combines them.</li>
+        <li>Service levels are measured in elapsed clock hours, not working hours.</li>
+        <li>Staff have a modern browser and network access to the internal site.</li>
+      </ul>
+
+      <h4>Dependencies</h4>
+      <ul>
+        <li>Oracle Database 19c with the <code>SDESK</code> schema in the <code>ORCLPDB</code> service — no other database engine is supported.</li>
+        <li>PHP 8.2 or later with the Oracle client extension enabled, and Oracle client libraries on the server path.</li>
+        <li>HTTPS with a valid certificate — browser push refuses to register otherwise.</li>
+        <li>A running task scheduler for SLA recalculation every fifteen minutes.</li>
+        <li>Master data — companies, locations, departments and users — must be loaded before a company can transact.</li>
+      </ul>
+
+      <h4>Constraints</h4>
+      <ul>
+        <li>Database credentials live in environment configuration and are never held in code.</li>
+        <li>Built-in role codes are fixed because the application matches on them.</li>
+        <li>The wildcard permission is reserved for the System Administrator role and cannot be granted through the interface.</li>
+        <li>Locations and departments are currently defined for Dewan Motors only; the other nineteen companies need theirs before rollout.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================== 22 -->
+    <section id="s22">
+      <h2><span class="num">22</span><span>Known gaps and open decisions</span></h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Item</th><th>Decision needed</th><th class="nowrap">Owner</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">OPN-01</td><td>IT Support Staff can be assigned a compliance obligation but cannot open it, because the role lacks the compliance view permission</td><td>Grant <code>compliance.view</code> to IT Support Staff, or stop assigning obligations to that role</td><td>Compliance / IT</td></tr>
+            <tr><td class="id">OPN-02</td><td>Locations and departments exist for Dewan Motors only</td><td>Confirm the rollout sequence for the remaining nineteen companies and who loads their structure</td><td>Project sponsor</td></tr>
+            <tr><td class="id">OPN-03</td><td>Session timeout is 120 minutes</td><td>Confirm whether a full working day (480 minutes) is preferred; this is a security policy call</td><td>IT / Management</td></tr>
+            <tr><td class="id">OPN-04</td><td>Service levels use elapsed clock hours, so overnight and weekend time counts against a target</td><td>Decide whether working calendars are required before the SLA reporting is used for performance measurement</td><td>DGM</td></tr>
+            <tr><td class="id">OPN-05</td><td>Asset register has a database table and permissions but no screens</td><td>Confirm whether asset tracking is in a later phase or dropped</td><td>IT Manager</td></tr>
+            <tr><td class="id">OPN-06</td><td>Notification delivery is in-app and browser push only</td><td>Decide whether email delivery is required, particularly for approval requests</td><td>Management</td></tr>
+            <tr><td class="id">OPN-07</td><td>Fifteen users hold the DGM role and eleven hold Management</td><td>Confirm this reflects the intended approval authority for development requests</td><td>Management</td></tr>
+            <tr><td class="id">OPN-08</td><td>Seeded demonstration accounts share a common default password</td><td>Confirm these are removed or reset before wider rollout</td><td>Administrator</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================== 23 -->
+    <section id="s23">
+      <h2><span class="num">23</span><span>Acceptance criteria</span></h2>
+
+      <p>The release is accepted when each of the following can be demonstrated against live data.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="id">Ref</th><th>Criterion</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="id">AC-01</td><td>An employee signs in with their mobile number, raises a ticket, and receives a company-scoped ticket number in the correct format</td></tr>
+            <tr><td class="id">AC-02</td><td>The IT team is notified of the new ticket, assigns it, and the assignee is notified in turn</td></tr>
+            <tr><td class="id">AC-03</td><td>The ticket carries response and resolution deadlines matching the priority's service level, and its SLA state updates within fifteen minutes of the deadline passing</td></tr>
+            <tr><td class="id">AC-04</td><td>An internal note added by IT is not visible to the requester; a public comment is</td></tr>
+            <tr><td class="id">AC-05</td><td>Resolving the ticket records the resolution, the resolver and a final SLA outcome that no later run changes</td></tr>
+            <tr><td class="id">AC-06</td><td>A user granted one company cannot see, list or open a record belonging to another — including by entering its identifier in the address bar</td></tr>
+            <tr><td class="id">AC-07</td><td>A development request cannot progress past approval without a recorded decision, approver and timestamp; a rejection carries a reason</td></tr>
+            <tr><td class="id">AC-08</td><td>A compliance obligation raised by a Compliance Officer appears for the Administrator, DGM, Management and IT Manager, and is not visible to unrelated staff</td></tr>
+            <tr><td class="id">AC-09</td><td>Every dashboard figure matches the underlying list when the tile is clicked through</td></tr>
+            <tr><td class="id">AC-10</td><td>Every create, update, approval and sign-in appears in the audit trail with actor, timestamp, IP address and the fields that changed</td></tr>
+            <tr><td class="id">AC-11</td><td>An administrator creates a new role, grants it view, create and update on one module, assigns it to a user, and that user gains exactly those rights and no others</td></tr>
+            <tr><td class="id">AC-12</td><td>A ticket export produces a CSV covering the selected range without exhausting server memory</td></tr>
+            <tr><td class="id">AC-13</td><td>Concurrent ticket creation across two sessions produces two distinct, sequential ticket numbers</td></tr>
+            <tr><td class="id">AC-14</td><td>An expired session on a submitted form returns the user to that form with their input intact, not to an error page</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      Business Requirements Document · Service Desk · Version 1.0 · 12 August 2026 ·
+      Prepared against the deployed system and the <code>SDESK</code> schema.
+      Counts and configuration reflect the position on the date of issue.
+    </footer>
+
+  </main>
+</div>
