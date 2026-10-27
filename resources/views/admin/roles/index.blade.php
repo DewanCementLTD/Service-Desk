@@ -50,13 +50,26 @@
                         </td>
                         <td class="px-2 py-2.5 text-right tabular-nums">{{ $role->users_count }}</td>
                         <td class="px-2 py-2.5"><x-badge :color="$role->is_active ? 'green' : 'slate'">{{ $role->is_active ? 'Active' : 'Inactive' }}</x-badge></td>
-                        <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                            <a href="{{ route('admin.roles.edit', $role) }}" class="text-xs font-medium text-indigo-600 dark:text-indigo-400">Edit</a>
+                        <td class="px-4 py-2.5 text-right whitespace-nowrap space-x-2">
+                            <a href="{{ route('admin.roles.edit', $role) }}" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Edit</a>
                             @unless($role->is_system && $role->is_active)
-                                <form method="POST" action="{{ route('admin.roles.toggle', $role) }}" class="ml-2 inline">
+                                <form method="POST" action="{{ route('admin.roles.toggle', $role) }}" class="inline">
                                     @csrf
-                                    <button type="submit" class="text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                                    <button type="submit" class="text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline">
                                         {{ $role->is_active ? 'Deactivate' : 'Activate' }}
+                                    </button>
+                                </form>
+                            @endunless
+                            @unless($role->is_system)
+                                <form method="POST" action="{{ route('admin.roles.destroy', $role) }}" class="inline" onsubmit="return confirm('Delete role &quot;{{ $role->name }}&quot;? This cannot be undone.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:underline" @if($role->users_count > 0) disabled title="Cannot delete a role with {{ $role->users_count }} assigned user(s)" @endif>
+                                        @if($role->users_count > 0)
+                                            Delete ({{ $role->users_count }} users)
+                                        @else
+                                            Delete
+                                        @endif
                                     </button>
                                 </form>
                             @endunless

@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
@@ -27,7 +29,7 @@ class User extends Authenticatable
     protected $fillable = [
         'employee_no', 'name', 'email', 'password', 'role_id', 'department_id',
         'default_org_id', 'default_company_id', 'default_location_id',
-        'designation_id', 'phone', 'avatar_path',
+        'designation_id', 'phone', 'avatar_path', 'hod_phone',
         'is_all_orgs', 'is_all_companies', 'is_all_locations', 'is_active',
         'must_change_password', 'password_changed_at',
     ];
@@ -115,6 +117,36 @@ class User extends Authenticatable
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'user_id');
+    }
+
+    public function teamLeadAssignments(): HasMany
+    {
+        return $this->hasMany(TeamAssignment::class, 'team_lead_id');
+    }
+
+    /**
+     * The users reporting to this team lead. pluck() drops out of the Eloquent
+     * collection into the base one, so this cannot be typed as Eloquent\Collection.
+     */
+    public function teamMembers(): SupportCollection
+    {
+        return $this->teamLeadAssignments()
+            ->with('teamMember')
+            ->get()
+            ->pluck('teamMember')
+            ->filter()
+            ->values();
+    }
+
+    /** The row naming this user as somebody's team member. */
+    public function teamLeadAssignment(): HasOne
+    {
+        return $this->hasOne(TeamAssignment::class, 'team_member_id');
+    }
+
+    public function teamLead(): ?User
+    {
+        return $this->teamLeadAssignment->teamLead ?? null;
     }
 
     // ------------------------------------------------------ access to org scope

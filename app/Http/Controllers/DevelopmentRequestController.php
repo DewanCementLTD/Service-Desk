@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\TicketPriority;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\DevelopmentRequestMailService;
 use App\Services\DocumentNumberService;
 use App\Services\NotificationService;
 use App\Services\ScopeContext;
@@ -25,6 +26,7 @@ class DevelopmentRequestController extends Controller
         private AuditLogger $audit,
         private NotificationService $notifications,
         private ScopeContext $scope,
+        private DevelopmentRequestMailService $mail,
     ) {
     }
 
@@ -119,6 +121,8 @@ class DevelopmentRequestController extends Controller
             return $model;
         });
 
+        $this->mail->notifyCreated($requestModel, $request->user());
+
         return redirect()->route('development.show', $requestModel)
             ->with('success', "Request {$requestModel->request_no} submitted.");
     }
@@ -172,6 +176,7 @@ class DevelopmentRequestController extends Controller
         }
 
         $original = $development->getOriginal();
+        $oldStatusId = $development->development_status_id;
 
         DB::connection('oracle')->transaction(function () use ($development, $data, $request, $original) {
             $status = DevelopmentStatus::find($data['development_status_id']);
@@ -203,6 +208,15 @@ class DevelopmentRequestController extends Controller
                 );
             }
         });
+
+        if ((int) $development->development_status_id !== (int) $oldStatusId) {
+            $this->mail->notifyStatusChanged(
+                $development,
+                $request->user(),
+                DevelopmentStatus::find($oldStatusId)?->name,
+                $development->status?->name ?? '—'
+            );
+        }
 
         return back()->with('success', 'Request updated.');
     }
@@ -244,6 +258,14 @@ class DevelopmentRequestController extends Controller
                 route('development.show', $development->id)
             );
         });
+
+        $this->mail->notifyStatusChanged(
+            $development,
+            $request->user(),
+            'Pending review',
+            $development->status?->name ?? $data['decision'],
+            $data['reason'] ?? null
+        );
 
         return back()->with('success', "Request marked {$data['decision']}.");
     }
@@ -288,7 +310,25 @@ class DevelopmentRequestController extends Controller
             );
         });
 
+        $this->mail->notifyCommented($development, $request->user(), $data['notes']);
+
         return back()->with('success', 'Update posted.');
+    }
+
+    public function destroy(DevelopmentRequest $development): RedirectResponse
+    {
+        $this->authoriseAccess($development);
+        abort_unless(auth()->user()->hasPermission('development.delete'), 403);
+
+        $attributes = $development->getAttributes();
+        $number     = $development->request_no;
+
+        DB::connection('oracle')->transaction(function () use ($development, $attributes, $number) {
+            $this->audit->deleted('DEVELOPMENT_REQUEST', $development->id, $attributes, "Development request {$number} deleted");
+            $development->delete();
+        });
+
+        return redirect()->route('development.index')->with('success', "Request {$number} deleted.");
     }
 
     private function authoriseAccess(DevelopmentRequest $model): void

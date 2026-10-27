@@ -6,7 +6,7 @@ use App\Models\DevelopmentRequest;
 use App\Models\Sprint;
 use App\Models\Task;
 use App\Models\Ticket;
-use App\Models\TicketStatus;
+use App\Models\TicketPriority;
 use App\Services\AgentDirectory;
 use App\Services\BoardService;
 use App\Services\ScopeContext;
@@ -45,19 +45,52 @@ class BoardController extends Controller
             ? Sprint::forCompany($companyId)->find($request->integer('sprint_id'))
             : ($companyId ? $this->sprints->current($companyId, $cadence) : null);
 
-        // "Assigned to me" is a personal filter on top of scope, not a permission
-        // gate — anyone with a queue can narrow the board to their own cards.
-        $mineOnly   = $request->boolean('mine');
-        $assignedTo = $mineOnly ? $user->id : null;
+        // Filter by assigned person - default to showing all tasks
+        $assignedTo = null;
+        if ($request->filled('assigned_to')) {
+            $assignedTo = (int) $request->integer('assigned_to');
+        }
+
+        // Keep backward compatibility with "mine" parameter
+        if ($request->boolean('mine')) {
+            $assignedTo = $user->id;
+        }
+
+        $priorityId  = $request->filled('priority_id') ? $request->integer('priority_id') : null;
+        $overdueOnly = $request->boolean('overdue');
+
+        // Unrecognised values fall back to the default rather than 404ing —
+        // these arrive from a hand-editable query string.
+        $sort = strtoupper($request->string('sort', BoardService::SORT_MANUAL)->toString());
+        $sort = isset(BoardService::SORTS[$sort]) ? $sort : BoardService::SORT_MANUAL;
+
+        $kinds = array_values(array_intersect(
+            array_map('strtoupper', (array) $request->input('kinds', [])),
+            array_keys(BoardService::KINDS),
+        ));
+
+        $filters = [
+            'assigned_to' => $assignedTo,
+            'priority_id' => $priorityId,
+            'overdue'     => $overdueOnly,
+            'kinds'       => $kinds,
+            'sort'        => $sort,
+        ];
 
         return view('board.index', [
             'sprint'      => $sprint,
             'cadence'     => $cadence,
-            'mineOnly'    => $mineOnly,
+            'assignedTo'  => $assignedTo,
+            'priorityId'  => $priorityId,
+            'overdueOnly' => $overdueOnly,
+            'sort'        => $sort,
+            'kinds'       => $kinds,
+            'priorities'  => TicketPriority::active()->ordered()->get(),
             'sprints'     => Sprint::forCompany($companyId)->open()->orderByDesc('starts_on')->limit(12)->get(),
-            'statuses'    => TicketStatus::active()->ordered()->get(),
-            'columns'     => $this->board->columns($companyId, $sprint?->id, $user, $assignedTo),
-            'development' => $this->board->developmentLane($companyId, $sprint?->id, $user, $assignedTo),
+            // Not every status is a column on every board — a tasks-only board
+            // drops Pending and Resolved, which no task can ever sit in.
+            'statuses'    => $this->board->columnStatuses($kinds),
+            'columns'     => $this->board->columns($companyId, $sprint?->id, $user, $filters),
             'agents'      => $this->agents->forCompany($companyId),
             'backlogSize' => $this->backlogCount($user, $companyId),
             'canManage'   => $user->hasPermission('board.manage'),
@@ -122,15 +155,22 @@ class BoardController extends Controller
             abort_if($sprint->isClosed(), 422, 'That iteration is closed.');
         }
 
-        // Tasks don't have their own board columns — they ride in three of the
-        // ticket columns (see BoardService::TASK_COLUMN_MAP). Dropped into one
-        // of the other three, there is no task status to move it to.
+        // Tasks don't have their own board columns — they ride in four of the
+        // ticket columns (see BoardService::TASK_COLUMN_MAP). Dropped into
+        // Pending or Resolved, there is no task status to move it to; a
+        // tasks-only board hides those two, but a mixed board still shows them.
         if ($item instanceof Task && ! empty($data['status_id'])) {
             $taskStatusId = $this->board->taskStatusIdForColumn((int) $data['status_id']);
 
             abort_if($taskStatusId === null, 422, 'Tasks cannot be moved to that column.');
 
             $data['status_id'] = $taskStatusId;
+        }
+
+        // Same translation for a development request — every column has an
+        // equivalent development status (see BoardService::DEV_CANONICAL_STATUS_FOR_COLUMN).
+        if ($item instanceof DevelopmentRequest && ! empty($data['status_id'])) {
+            $data['status_id'] = $this->board->devStatusIdForColumn((int) $data['status_id']);
         }
 
         $moved = $this->board->move($data, $request->user());
@@ -141,9 +181,10 @@ class BoardController extends Controller
             'sprint_id'  => $moved instanceof Task ? null : $moved->sprint_id,
             'board_rank' => $moved->board_rank,
             'status_id'  => match (true) {
-                $moved instanceof Ticket => $moved->status_id,
-                $moved instanceof Task   => $moved->task_status_id,
-                default                  => null,
+                $moved instanceof Ticket             => $moved->status_id,
+                $moved instanceof Task               => $moved->task_status_id,
+                $moved instanceof DevelopmentRequest => $moved->development_status_id,
+                default                               => null,
             },
         ]);
     }
@@ -242,6 +283,14 @@ class BoardController extends Controller
         // Moving work is a management action; reading the board is not.
         abort_unless($request->user()->hasPermission('board.manage'), 403,
             'You do not have permission to move work on the board.');
+
+        // A dragged development request changes its pipeline status the same
+        // way editing it on its own page would (see BoardService::moveDevelopmentStatus()),
+        // so it needs the same permission that page requires.
+        if ($item instanceof DevelopmentRequest) {
+            abort_unless($request->user()->hasPermission('development.update'), 403,
+                'You do not have permission to move development requests on the board.');
+        }
     }
 
     private function authoriseCompany(Request $request, int $companyId): void

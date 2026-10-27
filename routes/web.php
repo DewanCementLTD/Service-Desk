@@ -18,6 +18,8 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScopeController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TeamLeadController;
+use App\Http\Controllers\TeamReportsController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +62,19 @@ Route::middleware(['auth', 'permission'])->group(function () {
     // sidebar link in layouts/app.blade.php.
     Route::get('dashboard/personal', [DashboardController::class, 'personal'])
         ->middleware('permission:dashboard.view')->name('dashboard.personal');
+
+    // ---------------------------------------------------------- team management
+    Route::prefix('team')->name('team-lead.')->middleware('permission:team.manage')->group(function () {
+        Route::get('/', [TeamLeadController::class, 'index'])->name('index');
+        Route::get('create', [TeamLeadController::class, 'create'])->name('create');
+        Route::post('/', [TeamLeadController::class, 'store'])->name('store');
+        Route::delete('assignments/{assignment}', [TeamLeadController::class, 'destroy'])->name('destroy');
+    });
+
+    // ---------------------------------------------------------- team reports
+    Route::get('team-reports', [TeamReportsController::class, 'index'])
+        ->middleware('permission:team.manage')
+        ->name('team-reports.index');
 
     // ---------------------------------------------------------------- tickets
     Route::middleware('permission:tickets.view')->group(function () {
@@ -114,6 +129,8 @@ Route::middleware(['auth', 'permission'])->group(function () {
             ->middleware('permission:development.approve')->name('development.decide');
         Route::post('development/{development}/update', [DevelopmentRequestController::class, 'addUpdate'])
             ->name('development.progress');
+        Route::delete('development/{development}', [DevelopmentRequestController::class, 'destroy'])
+            ->middleware('permission:development.delete')->name('development.destroy');
     });
 
     // ------------------------------------------------------------------ tasks
@@ -126,6 +143,10 @@ Route::middleware(['auth', 'permission'])->group(function () {
         Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
         Route::put('tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
         Route::post('tasks/{task}/comment', [TaskController::class, 'comment'])->name('tasks.comment');
+        Route::delete('tasks/{task}', [TaskController::class, 'destroy'])
+            ->middleware('permission:tasks.delete')->name('tasks.destroy');
+        Route::post('tasks/{task}/priority', [TaskController::class, 'updatePriority'])
+            ->middleware('permission:tasks.manage_priority')->name('tasks.priority');
     });
 
     // ---------------------------------------------------------------- profile
@@ -219,6 +240,7 @@ Route::middleware(['auth', 'permission'])->group(function () {
             Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
             Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
             Route::post('roles/{role}/toggle', [RoleController::class, 'toggleActive'])->name('roles.toggle');
+            Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
         });
 
         Route::middleware('permission:departments.manage')->group(function () {

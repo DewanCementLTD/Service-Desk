@@ -27,6 +27,7 @@ class Role extends BaseModel
     public const IT_MANAGER = 'IT_MANAGER';
     public const IT_STAFF   = 'IT_STAFF';
     public const DEVELOPER  = 'DEVELOPER';
+    public const TEAM_LEAD  = 'TEAM_LEAD';
     public const DEPT_HEAD  = 'DEPT_HEAD';
     public const EMPLOYEE   = 'EMPLOYEE';
 

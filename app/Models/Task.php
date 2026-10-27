@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection as SupportCollection;
 
 class Task extends BaseModel
 {
@@ -65,6 +67,43 @@ class Task extends BaseModel
     public function assigner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function assignees(): HasMany
+    {
+        return $this->hasMany(TaskAssignee::class, 'task_id')
+            ->orderBy('sort_order');
+    }
+
+    // pluck() drops out of the Eloquent collection into the base one, so this
+    // cannot be typed as Eloquent\Collection.
+    public function allAssignees(): SupportCollection
+    {
+        return $this->assignees()->with('assignee')->get()->pluck('assignee');
+    }
+
+    /**
+     * Everyone working the task: the primary assignee plus the co-assignees
+     * held in TASK_ASSIGNEES, in order, without duplicates.
+     */
+    public function assigneeTeam(): SupportCollection
+    {
+        return collect([$this->assignee])
+            ->concat($this->assignees->pluck('assignee'))
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
+
+    /**
+     * A task belongs to someone if they hold it directly or ride along in
+     * TASK_ASSIGNEES — every "is this mine?" filter has to ask both.
+     */
+    public function scopeForAssignee(Builder $query, int $userId): Builder
+    {
+        return $query->where(fn ($q) => $q
+            ->where('assigned_to', $userId)
+            ->orWhereHas('assignees', fn ($sq) => $sq->where('user_id', $userId)));
     }
 
     public function parent(): BelongsTo

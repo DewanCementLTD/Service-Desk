@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Company;
 use App\Models\Sprint;
+use App\Models\TicketStatus;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -99,13 +100,21 @@ class SprintService
      * work keeps its sprint, which is what makes "what did we ship last week?"
      * answerable afterwards.
      *
+     * Cancelled tickets go back too, even though is_closed_state is true for
+     * them same as Closed. The board never offers a closed sprint to look
+     * inside — the picker only lists open ones — so a cancelled ticket left
+     * pinned to a sprint that then closes becomes permanently unreachable from
+     * the board. Closed (actually resolved/shipped) tickets are the only ones
+     * worth keeping pinned to their sprint's history.
+     *
      * @return int  how many items returned to the backlog
      */
     public function close(Sprint $sprint): int
     {
         return DB::connection('oracle')->transaction(function () use ($sprint) {
             $tickets = $sprint->tickets()
-                ->whereHas('status', fn ($q) => $q->where('is_closed_state', 0))
+                ->whereHas('status', fn ($q) => $q->where('is_closed_state', 0)
+                    ->orWhere('code', TicketStatus::CANCELLED))
                 ->update(['sprint_id' => null, 'board_rank' => null]);
 
             $requests = $sprint->developmentRequests()
@@ -128,20 +137,38 @@ class SprintService
         });
     }
 
-    /** The sprint a company is currently working in, opening one if none exists. */
-    public function current(int $companyId, string $cadence = Sprint::WEEKLY): ?Sprint
+    /**
+     * The sprint a company is currently working in, opening one if none exists.
+     *
+     * More than one ACTIVE sprint of the same cadence can exist at once — an IT
+     * manager can hand-create and start one from the backlog screen alongside
+     * whatever the nightly roll already opened — so this doesn't just take
+     * whichever started most recently. It prefers the one whose date window
+     * actually contains today, which is what "This week"/"This month" on the
+     * board promises; only when none of them do (a gap the roll hasn't caught
+     * up on yet) does it fall back to the latest-started one.
+     */
+    public function current(int $companyId, string $cadence = Sprint::WEEKLY, ?Carbon $now = null): ?Sprint
     {
-        $sprint = Sprint::forCompany($companyId)->cadence($cadence)->active()
-            ->orderByDesc('starts_on')
-            ->first();
+        $now = $now ?? Carbon::now();
+
+        $sprint = $this->currentAmong($companyId, $cadence, $now);
 
         if ($sprint !== null) {
             return $sprint;
         }
 
-        $this->rollCompany($companyId, $cadence, Carbon::now());
+        $this->rollCompany($companyId, $cadence, $now);
+
+        return $this->currentAmong($companyId, $cadence, $now);
+    }
+
+    private function currentAmong(int $companyId, string $cadence, Carbon $now): ?Sprint
+    {
+        $today = $now->toDateString();
 
         return Sprint::forCompany($companyId)->cadence($cadence)->active()
+            ->orderByRaw('CASE WHEN STARTS_ON <= ? AND ENDS_ON >= ? THEN 0 ELSE 1 END', [$today, $today])
             ->orderByDesc('starts_on')
             ->first();
     }

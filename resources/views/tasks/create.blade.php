@@ -19,6 +19,10 @@
                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">{{ old('description') }}</textarea>
             </x-field>
 
+            {{-- Without assignment rights the task is raised against the person
+                 creating it; TaskController::store() sets that whatever is posted,
+                 so offering a picker here would only mislead. --}}
+            @if($canAssign)
             <x-field label="Assign to" name="assigned_to">
                 <select name="assigned_to" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
                     <option value="">Unassigned</option>
@@ -27,6 +31,26 @@
                     @endforeach
                 </select>
             </x-field>
+
+            <x-field label="Additional Assignees (up to 2 more)" name="assignees[]" class="md:col-span-2">
+                <select name="assignees[]" multiple class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800" title="Select up to 2 additional assignees">
+                    @php $selectedAssignees = array_map('intval', (array) old('assignees', [])); @endphp
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}" @selected(in_array((int) $user->id, $selectedAssignees, true))>{{ $user->name }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-slate-500">Hold Ctrl/Cmd to select multiple (up to 2 additional assignees allowed)</p>
+            </x-field>
+            @else
+            <x-field label="Assigned to" name="assigned_to">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800/50">
+                    {{ auth()->user()->name }}
+                </div>
+                <p class="mt-1 text-xs text-slate-500">
+                    Tasks you raise are assigned to you. A team lead or administrator can pass this on later.
+                </p>
+            </x-field>
+            @endif
 
             <x-field label="Priority" name="priority_id">
                 <select name="priority_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">

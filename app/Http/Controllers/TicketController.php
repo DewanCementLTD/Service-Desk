@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTicketRequest;
 use App\Models\Department;
+use App\Models\DevelopmentRequest;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\TicketCategory;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
+use App\Models\User;
 use App\Services\AgentDirectory;
 use App\Services\AuditLogger;
 use App\Services\ScopeContext;
@@ -65,11 +67,12 @@ class TicketController extends Controller
             ->withQueryString();
 
         return view('tickets.index', [
-            'tickets'    => $tickets,
-            'statuses'   => TicketStatus::active()->ordered()->get(),
-            'priorities' => TicketPriority::active()->ordered()->get(),
-            'categories' => TicketCategory::active()->ordered()->get(),
-            'agents'     => $this->agents(),
+            'tickets'              => $tickets,
+            'statuses'             => TicketStatus::active()->ordered()->get(),
+            'priorities'           => TicketPriority::active()->ordered()->get(),
+            'categories'           => TicketCategory::active()->ordered()->get(),
+            'agents'               => $this->agents(),
+            'developmentRequests'  => $user->hasPermission('development.view') ? $this->recentDevelopmentRequests($user) : null,
             'filters'    => $request->only(['q', 'status_id', 'priority_id', 'category_id', 'assigned_to', 'sla', 'from', 'to']),
         ]);
     }
@@ -338,6 +341,29 @@ class TicketController extends Controller
     private function agents()
     {
         return $this->agentDirectory->forCompany($this->scope->companyId());
+    }
+
+    /**
+     * A snapshot of open development requests, shown on the Tickets screen so
+     * IT staff working the queue see everything raised against them — not just
+     * incidents — without leaving the page. Mirrors the visibility rule in
+     * DevelopmentRequestController::index() (own requests only, unless the
+     * viewer manages the pipeline) and excludes anything already resolved,
+     * released or rejected: this is a "what's still moving" view, not the full
+     * register — that lives on the Development screen itself.
+     */
+    private function recentDevelopmentRequests(User $user)
+    {
+        return DevelopmentRequest::with(['status', 'priority', 'requester', 'assignee'])
+            ->visibleTo($user)
+            ->inScope($this->scope->companyId(), $this->scope->locationId())
+            ->whereHas('status', fn ($q) => $q->where('is_completed_state', 0))
+            ->when(! $user->hasAnyPermission('development.update', 'development.approve', 'development.assign'), function ($q) use ($user) {
+                $q->where(fn ($w) => $w->where('requester_id', $user->id)->orWhere('assigned_to', $user->id));
+            })
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
     }
 
     /** Fields offered when raising a ticket. */

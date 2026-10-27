@@ -58,11 +58,11 @@ async function sendMove(board, card, column, undo) {
         ...neighbours(card),
     };
 
-    // Development requests ride in their own lane and keep their pipeline status,
-    // so only a ticket or task dropped in a status column carries a status
-    // change. The payload always carries the column's *ticket* status id —
-    // BoardController translates it for a task (see taskStatusIdForColumn()).
-    if ((card.dataset.kind === 'TICKET' || card.dataset.kind === 'TASK') && column.dataset.statusId) {
+    // Every card dropped in a status column carries a status change — the
+    // payload always carries the column's *ticket* status id, and
+    // BoardController translates it for a task or development request (see
+    // taskStatusIdForColumn() / devStatusIdForColumn()).
+    if (column.dataset.statusId) {
         payload.status_id = Number(column.dataset.statusId);
     }
 
@@ -127,11 +127,18 @@ function boot() {
         return;
     }
 
+    // Under a priority/due-date sort the column order is derived from the cards
+    // themselves, so a hand-placed position would vanish on the next load.
+    // Cards still move between columns; they just cannot be reordered within one.
+    const manualOrder = board.dataset.manualOrder !== '0';
+
     board.querySelectorAll('.board-column').forEach((column) => {
         Sortable.create(column, {
-            // Development requests are not interchangeable with tickets, so each
-            // lane only accepts its own kind.
-            group: column.dataset.lane === 'DEV' ? 'dev' : 'tickets',
+            // One shared group so a card can be dragged from any column into any
+            // other — without this, Sortable gives each column its own implicit
+            // group and only in-column reordering (top to bottom) is possible.
+            group: 'board',
+            sort: manualOrder,
             animation: 150,
             ghostClass: 'opacity-40',
             dragClass: 'rotate-1',

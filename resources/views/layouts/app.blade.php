@@ -14,6 +14,7 @@
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <meta name="theme-color" content="#4f46e5" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="{{ config('app.name') }}">
     <meta name="description" content="@yield('meta_description', 'Raise and track IT tickets and development requests across Yousuf Dewan Companies.')">
@@ -65,9 +66,24 @@
         ]] : []),
         ['label' => 'Board',       'route' => 'board.index',      'active' => 'board*',       'permission' => 'board.view',
          'icon' => 'M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Zm10 0a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5Z'],
+        // Matches the route's own gate (permission:tasks.view). Keying this on
+        // assign/create hid the register from everyone who only works tasks
+        // rather than handing them out — IT staff and developers included, who
+        // get tasks assigned to them and could not reach them. index() already
+        // narrows the list to a person's own tasks without tasks.assign.
         ['label' => 'Tasks',       'route' => 'tasks.index',      'active' => 'tasks*',
-         'permission' => ['tasks.assign', 'tasks.create'],
+         'permission' => 'tasks.view',
          'icon' => 'M9 5h10M9 12h10M9 19h10M4.5 5l1 1 2-2m-3 8 1 1 2-2m-3 8 1 1 2-2'],
+        ...($user->hasPermission('team.manage') ? [[
+            'label' => 'Team',       'route' => 'team-lead.index',  'active' => 'team[^-]*',
+            'permission' => 'team.manage',
+            'icon' => 'M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 7.121-3.072M15 19.128A9.38 9.38 0 0 1 9.375 19.5m0 0a9.37 9.37 0 0 0-7.128-3.072M15 19.128v-.008a9.38 9.38 0 0 0-7.128-3.072m0 0a3 3 0 1 1 6 0m7.072-4.049a.75.75 0 1 0-1.061-1.061 3.75 3.75 0 1 1 1.06 1.061m0 0a9.382 9.382 0 0 0-5.858-9.977m11.129-2.111a9.375 9.375 0 1 1-13.25 13.25m12.331-9.355a3 3 0 1 1-4.243-4.243m2.122 6.364a6 6 0 1 0-8.485 8.485m3.182-3.182a3 3 0 1 1-4.243-4.243'
+        ],
+        [
+            'label' => 'Team Reports', 'route' => 'team-reports.index', 'active' => 'team-reports*',
+            'permission' => 'team.manage',
+            'icon' => 'm9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z'
+        ]] : []),
         ['label' => 'Reports',     'route' => 'reports.index',    'active' => 'reports*',     'permission' => 'reports.view',
          'icon' => 'M5 20V10m7 10V4m7 16v-7'],
         // Everyone can sign in, so everyone gets the guide - it filters itself by role.

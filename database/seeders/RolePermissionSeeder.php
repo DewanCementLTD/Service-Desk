@@ -40,12 +40,19 @@ class RolePermissionSeeder extends Seeder
             'development.update'        => 'Update development requests',
             'development.assign'        => 'Assign development requests',
             'development.approve'       => 'Approve development requests',
+            // Deliberately not granted to any seeded role below — only the
+            // Administrator's wildcard ('*') carries it. Unlike tickets.delete
+            // (also held by IT Manager), deleting a development request removes
+            // its approval/audit trail entirely, so this stays admin-only.
+            'development.delete'        => 'Delete development requests',
         ],
         'Tasks' => [
             'tasks.view'                => 'View tasks',
             'tasks.create'              => 'Create tasks',
             'tasks.update'              => 'Update tasks',
             'tasks.assign'              => 'Assign tasks',
+            'tasks.delete'              => 'Delete tasks',
+            'tasks.manage_priority'     => 'Change task priority',
         ],
         'Assets' => [
             'assets.view'               => 'View assets',
@@ -65,6 +72,9 @@ class RolePermissionSeeder extends Seeder
             'departments.manage'        => 'Manage departments',
             'lookups.manage'            => 'Manage master data',
             'audit.view'                => 'View audit trail',
+        ],
+        'Team Management' => [
+            'team.manage'               => 'Manage team members and assignments',
         ],
     ];
 
@@ -116,7 +126,26 @@ class RolePermissionSeeder extends Seeder
             [
                 'dashboard.view', 'tickets.view', 'tickets.view_all', 'tickets.create',
                 'tickets.update', 'tickets.resolve', 'tickets.comment_internal', 'board.view',
-                'tasks.view', 'tasks.update', 'assets.view', 'reports.view',
+                // Development requests already show as cards in the board's dev
+                // lane, which IT staff could see but not open (development.show
+                // sits behind development.view) — this closes that gap so a
+                // request raised by anyone is tracked and readable by the team
+                // working the queue, the same way it already is for IT Manager.
+                'development.view',
+                // Staff raise their own tasks but never hand them to anyone —
+                // tasks.create without tasks.assign means TaskController::store()
+                // puts their name on it and ignores any assignee they post. A
+                // team lead or admin reassigns it afterwards.
+                'tasks.view', 'tasks.create', 'tasks.update', 'assets.view', 'reports.view',
+            ],
+        ],
+        Role::TEAM_LEAD => [
+            'Team Lead', 'Manages tasks for their assigned team members.', 28,
+            [
+                'dashboard.view', 'tickets.view', 'tickets.create', 'tickets.update',
+                'tickets.comment_internal', 'board.view', 'development.view',
+                'tasks.view', 'tasks.create', 'tasks.update', 'tasks.assign', 'tasks.delete', 'tasks.manage_priority',
+                'team.manage', 'reports.view', 'users.view',
             ],
         ],
         Role::DEVELOPER => [

@@ -77,7 +77,10 @@ class TicketMail extends Mailable
         $no = $this->ticket->ticket_no;
 
         return match ($this->event) {
-            self::CREATED        => "New ticket {$no}: {$this->ticket->subject}",
+            // Every ticket raised through the portal is a bug/issue report — new
+            // development work goes through DevelopmentRequestMail instead — so
+            // the subject says so rather than the generic "New ticket".
+            self::CREATED        => "New bug report {$no}: {$this->ticket->subject}",
             self::STATUS_CHANGED => "Ticket {$no} is now {$this->context['to_status']} — {$this->ticket->subject}",
             self::COMMENTED      => "New reply on {$no}: {$this->ticket->subject}",
             default               => "Ticket {$no}: {$this->ticket->subject}",

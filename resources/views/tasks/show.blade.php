@@ -5,6 +5,14 @@
 
 @section('actions')
     <a href="{{ route('tasks.index') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium dark:border-slate-700">Back to list</a>
+
+    @permission('tasks.delete')
+        <form method="POST" action="{{ route('tasks.destroy', $task) }}" class="inline" onsubmit="return confirm('Delete task {{ $task->task_no }}? This cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-500/10">Delete task</button>
+        </form>
+    @endpermission
 @endsection
 
 @section('content')
@@ -23,10 +31,20 @@
                     @csrf
                     @method('PUT')
 
+                    {{-- Assignment rights decide what is editable here. Without
+                         them TaskController::update() keeps only the status,
+                         progress, hours and remarks and drops the rest, so the
+                         other fields are shown as read-only rather than as
+                         inputs that quietly do nothing. The title still has to
+                         be posted — update() validates it as required. --}}
+                    @permission('tasks.assign')
                     <x-field label="Title" name="title" :required="true" class="md:col-span-2">
                         <input name="title" value="{{ old('title', $task->title) }}" required
                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
                     </x-field>
+                    @else
+                    <input type="hidden" name="title" value="{{ $task->title }}">
+                    @endpermission
 
                     <x-field label="Status" name="task_status_id" :required="true">
                         <select name="task_status_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
@@ -36,7 +54,8 @@
                         </select>
                     </x-field>
 
-                    <x-field label="Assignee" name="assigned_to">
+                    @permission('tasks.assign')
+                    <x-field label="Primary Assignee" name="assigned_to">
                         <select name="assigned_to" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
                             <option value="">Unassigned</option>
                             @foreach($users as $user)
@@ -45,10 +64,39 @@
                         </select>
                     </x-field>
 
+                    <x-field label="Additional Assignees (up to 2 more)" name="assignees[]" class="md:col-span-2">
+                        <select name="assignees[]" multiple class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800" title="Select up to 2 additional assignees">
+                            @php
+                                $selectedAssignees = collect(old('assignees', $task->assignees->pluck('user_id')))
+                                    ->map(fn ($id) => (int) $id)->all();
+                            @endphp
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}" @selected(in_array((int) $user->id, $selectedAssignees, true))>{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">Hold Ctrl/Cmd to select multiple (up to 2 additional assignees allowed)</p>
+                    </x-field>
+
                     <x-field label="Due date" name="due_at">
                         <input type="date" name="due_at" value="{{ old('due_at', $task->due_at?->format('Y-m-d')) }}"
                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
                     </x-field>
+                    @else
+                    <x-field label="Assignees" name="assigned_to" class="md:col-span-2">
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800/50">
+                            {{ collect([$task->assignee?->name])
+                                ->concat($task->assignees->map(fn ($a) => $a->assignee?->name))
+                                ->filter()->unique()->join(', ') ?: 'Unassigned' }}
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">Only a team lead or administrator can change who a task is assigned to.</p>
+                    </x-field>
+
+                    <x-field label="Due date" name="due_at">
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800/50">
+                            {{ $task->due_at?->format('d M Y') ?: '—' }}
+                        </div>
+                    </x-field>
+                    @endpermission
 
                     <x-field label="Progress %" name="progress_percent">
                         <input type="number" name="progress_percent" min="0" max="100" value="{{ old('progress_percent', $task->progress_percent) }}"
@@ -123,6 +171,23 @@
                 @endforeach
             </dl>
         </x-card>
+
+        @permission('tasks.manage_priority')
+            <x-card title="Change Priority">
+                <form method="POST" action="{{ route('tasks.priority', $task) }}" class="p-4">
+                    @csrf
+                    <div class="space-y-3">
+                        <select name="priority_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
+                            <option value="">Select priority...</option>
+                            @foreach($priorities as $priority)
+                                <option value="{{ $priority->id }}" @selected($task->priority_id == $priority->id)>{{ $priority->name }}</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Update Priority</button>
+                    </div>
+                </form>
+            </x-card>
+        @endpermission
 
         @if($task->subtasks->isNotEmpty())
             <x-card title="Subtasks">

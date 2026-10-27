@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\Log;
  *     everyone staffing the desk is copied, not only the two support roles)
  *   - the fixed IT lead from config('servicedesk.it_lead')
  *   - the requester
- *   - the requester's head of department (DEPARTMENTS.HEAD_USER_ID)
+ *   - the requester's head of department through two channels:
+ *     1. DEPARTMENTS.HEAD_USER_ID relationship (if the HOD is a user in the system)
+ *     2. HOD phone number lookup via USERS.HOD_PHONE (finds HOD by phone, retrieves email)
  *
  * There is deliberately no compliance recipient — the COMPLIANCE_OFFICER role
  * was retired, and no replacement contact address was supplied.
@@ -99,6 +101,7 @@ class TicketMailService
             $add($requester->email, $requester->name);
         }
 
+        // Add HOD through department relationship.
         $hod = $requester?->hod();
         if ($hod && $hod->hasReachableEmail() && $hod->id !== $requester?->id) {
             $add($hod->email, $hod->name);
@@ -108,6 +111,17 @@ class TicketMailService
                 'requester_id'   => $requester->id,
                 'department_id'  => $requester->department_id,
             ]);
+        }
+
+        // Add HOD through phone number lookup (if not already added above).
+        if ($requester && $requester->hod_phone) {
+            $hodByPhone = User::where('phone', $requester->hod_phone)
+                ->where('is_active', 1)
+                ->first();
+
+            if ($hodByPhone && $hodByPhone->hasReachableEmail() && $hodByPhone->id !== $requester->id) {
+                $add($hodByPhone->email, $hodByPhone->name);
+            }
         }
 
         return array_values($byEmail);

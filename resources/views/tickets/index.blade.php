@@ -110,4 +110,54 @@
         @endif
     </x-card>
 
+    {{-- ----------------------------------------------- development requests --}}
+    {{-- A development request is tracked in its own pipeline (see the Development
+         screen — status, approval, assignment all live there, untouched by this
+         block), but it is still work raised against the team, so a snapshot of
+         what's still open shows up here too rather than only on a screen most
+         IT staff never had a reason to open before. --}}
+    @if($developmentRequests !== null)
+        <x-card title="Development requests" subtitle="Open requests raised against the team." class="mt-4">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/50">
+                        <tr>
+                            <th class="px-4 py-2.5 text-left font-medium">Request</th>
+                            <th class="px-2 py-2.5 text-left font-medium">Requester</th>
+                            <th class="px-2 py-2.5 text-left font-medium">Assignee</th>
+                            <th class="px-2 py-2.5 text-left font-medium">Priority</th>
+                            <th class="px-2 py-2.5 text-left font-medium">Status</th>
+                            <th class="px-4 py-2.5 text-right font-medium">Raised</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        @forelse($developmentRequests as $devRequest)
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                <td class="px-4 py-2.5">
+                                    <a href="{{ route('development.show', $devRequest) }}" class="font-medium text-indigo-600 dark:text-indigo-400">{{ $devRequest->request_no }}</a>
+                                    <p class="mt-0.5 max-w-sm truncate text-xs text-slate-600 dark:text-slate-400">{{ $devRequest->title }}</p>
+                                </td>
+                                <td class="px-2 py-2.5 text-xs text-slate-600 dark:text-slate-400">{{ $devRequest->requester?->name }}</td>
+                                <td class="px-2 py-2.5 text-xs text-slate-600 dark:text-slate-400">{{ $devRequest->assignee?->name ?? '—' }}</td>
+                                <td class="px-2 py-2.5"><x-badge :color="$devRequest->priority?->color">{{ $devRequest->priority?->name }}</x-badge></td>
+                                <td class="px-2 py-2.5"><x-badge :color="$devRequest->status?->color">{{ $devRequest->status?->name }}</x-badge></td>
+                                <td class="px-4 py-2.5 text-right text-xs whitespace-nowrap text-slate-500">
+                                    {{ $devRequest->created_at?->diffForHumans(null, true) }} ago
+                                </td>
+                            </tr>
+                        @empty
+                            <x-empty-state colspan="6" message="No open development requests." />
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border-t border-slate-200 px-4 py-2.5 text-right dark:border-slate-800">
+                <a href="{{ route('development.index') }}" class="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-300">
+                    View all in Development &rarr;
+                </a>
+            </div>
+        </x-card>
+    @endif
+
 @endsection

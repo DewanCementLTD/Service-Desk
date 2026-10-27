@@ -55,7 +55,7 @@
                             <a href="{{ route('tasks.show', $task) }}" class="font-medium text-indigo-600 dark:text-indigo-400">{{ $task->task_no }}</a>
                             <p class="mt-0.5 max-w-sm truncate text-xs text-slate-600 dark:text-slate-400">{{ $task->title }}</p>
                         </td>
-                        <td class="px-2 py-2.5 text-xs text-slate-600 dark:text-slate-400">{{ $task->assignee?->name ?? '—' }}</td>
+                        <td class="px-2 py-2.5 text-xs text-slate-600 dark:text-slate-400">{{ $task->assigneeTeam()->pluck('name')->join(', ') ?: '—' }}</td>
                         <td class="px-2 py-2.5"><x-badge :color="$task->priority?->color">{{ $task->priority?->name ?? '—' }}</x-badge></td>
                         <td class="px-2 py-2.5"><x-badge :color="$task->status?->color">{{ $task->status?->name }}</x-badge></td>
                         <td class="px-2 py-2.5 text-right text-xs tabular-nums">{{ $task->progress_percent }}%</td>

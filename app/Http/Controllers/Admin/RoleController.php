@@ -96,6 +96,31 @@ class RoleController extends Controller
         return back()->with('success', 'Role updated.');
     }
 
+    public function destroy(Request $request, Role $role): RedirectResponse
+    {
+        // Prevent deletion of system/built-in roles
+        abort_if($role->is_system, 403,
+            'Built-in roles cannot be deleted.');
+
+        // Prevent deletion if users are assigned to this role
+        $userCount = $role->users()->count();
+        abort_if($userCount > 0, 422,
+            "Cannot delete role with {$userCount} assigned user" . ($userCount !== 1 ? 's' : '') . '.
+             Please reassign or deactivate users first.');
+
+        $roleName = $role->name;
+        $roleId = $role->id;
+
+        // Delete the role (permissions cascade delete via foreign key)
+        $role->delete();
+
+        $this->audit->deleted('ROLE', $roleId, [],
+            "Role {$roleName} deleted");
+
+        return redirect()->route('admin.roles.index')
+            ->with('success', "Role {$roleName} has been deleted.");
+    }
+
     /** @return array<string, mixed> */
     private function validated(Request $request, ?Role $role = null): array
     {

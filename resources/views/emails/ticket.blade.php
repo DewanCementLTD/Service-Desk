@@ -12,10 +12,14 @@
     $statusColor   = $palette[$ticket->status?->color] ?? $palette['slate'];
     $priorityColor = $palette[$ticket->priority?->color] ?? $palette['slate'];
 
+    // Every ticket raised through the portal is a bug/issue report — new
+    // development work is its own flow with its own email (see
+    // emails/development.blade.php) — so the pill says "bug report", not the
+    // generic "ticket".
     $eventMeta = [
-        \App\Mail\TicketMail::CREATED        => ['label' => 'New ticket',   'accent' => '#2563eb'],
-        \App\Mail\TicketMail::STATUS_CHANGED => ['label' => 'Status update','accent' => '#0f766e'],
-        \App\Mail\TicketMail::COMMENTED      => ['label' => 'New reply',    'accent' => '#7c3aed'],
+        \App\Mail\TicketMail::CREATED        => ['label' => 'New bug report', 'accent' => '#2563eb'],
+        \App\Mail\TicketMail::STATUS_CHANGED => ['label' => 'Status update',  'accent' => '#0f766e'],
+        \App\Mail\TicketMail::COMMENTED      => ['label' => 'New reply',      'accent' => '#7c3aed'],
     ][$event] ?? ['label' => 'Ticket update', 'accent' => '#334155'];
 @endphp
 <!DOCTYPE html>
@@ -33,13 +37,28 @@
                 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(15,23,42,0.06);">
 
                     {{-- ------------------------------------------------------------- brand banner --}}
-                    {{-- The logo's linework and wordmark are dark navy on a transparent/white
-                         backing, so the banner has to stay light — a dark banner swallows it. --}}
+                    {{-- Wordmark on the left, the full logo lockup on the right — a plain
+                         two-cell table rather than flex so this still lines up in Outlook's
+                         Word-based renderer. logo-email.png is the full lockup (emblem +
+                         wordmark + pill), used whole rather than cropped, so it needs the
+                         row's height rather than sitting inline with the text at icon size.
+                         No divider under it; the header reads as part of the same card as
+                         the content below rather than a separate block. --}}
                     <tr>
-                        <td align="center" style="background:#f8fafc;padding:24px 24px 20px;border-bottom:3px solid #0b1d3a;">
-                            <img src="{{ $message->embed(public_path('images/logo-email.png')) }}"
-                                 width="150" alt="Yousuf Dewan Companies — IT Service Desk"
-                                 style="display:block;width:150px;max-width:150px;height:auto;border:0;">
+                        <td style="padding:22px 28px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="left" valign="middle">
+                                        <p style="margin:0;font-size:16px;font-weight:800;letter-spacing:.02em;color:#0b1d3a;">IT Service Desk</p>
+                                        <p style="margin:2px 0 0;font-size:11px;font-weight:600;letter-spacing:.03em;color:#94a3b8;">Yousuf Dewan Companies</p>
+                                    </td>
+                                    <td align="right" valign="middle" width="120">
+                                        <img src="{{ $message->embed(public_path('images/logo-email.png')) }}"
+                                             width="112" alt="Yousuf Dewan Companies — IT Service Desk"
+                                             style="display:block;width:112px;max-width:112px;height:auto;border:0;">
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 
@@ -49,8 +68,8 @@
                             <span style="display:inline-block;background:{{ $eventMeta['accent'] }};color:#ffffff;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:999px;">
                                 {{ $eventMeta['label'] }}
                             </span>
-                            <p style="margin:12px 0 2px;font-size:12px;color:#64748b;">Ticket {{ $ticket->ticket_no }}</p>
-                            <h1 style="margin:0 0 16px;font-size:19px;line-height:1.35;color:#0f172a;">{{ $ticket->subject }}</h1>
+                            <p style="margin:14px 0 3px;font-size:12px;color:#64748b;">Ticket {{ $ticket->ticket_no }}</p>
+                            <h1 style="margin:0 0 18px;font-size:19px;line-height:1.35;color:#0f172a;">{{ $ticket->subject }}</h1>
                         </td>
                     </tr>
 
@@ -59,7 +78,7 @@
                         <td style="padding:0 28px;">
                             @if ($event === \App\Mail\TicketMail::CREATED)
                                 <p style="margin:0 0 20px;font-size:14px;line-height:1.65;color:#334155;">
-                                    A new ticket has been raised{{ $actor ? ' by ' : '' }}@if($actor)<strong>{{ $actor->name }}</strong>@endif. The IT team has been notified and will update this thread as work progresses.
+                                    A new bug report has been raised{{ $actor ? ' by ' : '' }}@if($actor)<strong>{{ $actor->name }}</strong>@endif. The IT team has been notified and will update this thread as work progresses.
                                 </p>
                             @elseif ($event === \App\Mail\TicketMail::STATUS_CHANGED)
                                 <p style="margin:0 0 12px;font-size:14px;line-height:1.65;color:#334155;">

@@ -5,6 +5,14 @@
 
 @section('actions')
     <a href="{{ route('development.index') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium dark:border-slate-700">Back to list</a>
+    @permission('development.delete')
+        <form method="POST" action="{{ route('development.destroy', $request) }}"
+              onsubmit="return confirm('Delete {{ $request->request_no }}? This cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-500/40">Delete request</button>
+        </form>
+    @endpermission
 @endsection
 
 @section('content')
